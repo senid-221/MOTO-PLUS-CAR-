@@ -60,3 +60,5 @@ Pooled connection strings (Neon `…-pooler`, Supabase `…-pooler`) are fine fo
 ## Testing against a real database
 
 `pnpm turbo test:e2e --filter=@seremoto/api` needs a database whose connection string contains `test`; anything else is refused so a shared instance cannot be cleaned by a test run. CI brings up `postgres:16-alpine`, deploys the migration, seeds, and runs the journey. Each run picks a random six-digit phone tag, touches only its own numbers, and deletes exactly those rows and their OTP challenges afterwards.
+
+Turbo 2 runs tasks with a strict environment by default: a variable that the task configuration does not name is not passed to the process, so a `DATABASE_URL` exported in the CI job arrived as unset and the suite stopped at its own guard. `tasks.test:e2e.env` in `turbo.json` is therefore the list of variables the journey is allowed to read — add a variable to that list when a new environment contract entry has to be observed by an end-to-end test.

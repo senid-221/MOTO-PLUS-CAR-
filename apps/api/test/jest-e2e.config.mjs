@@ -29,5 +29,4 @@ export default {
   // Authentication tests rotate real tokens and hit a real database, so they
   // must not share a worker with anything else.
   maxWorkers: 1,
-  dangerouslyReportAssertionFailure: true,
 };
