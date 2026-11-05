@@ -63,8 +63,49 @@ jobs:
       - name: Check the committed migration matches the schema
         run: pnpm run db:check-migration
 
+      # Captured rather than streamed so a failure can be reported with the
+      # offending lines. Run summaries and annotations are readable without
+      # repository sign-in; the raw step log is not.
       - name: Apply migrations
-        run: pnpm run prisma:migrate:deploy
+        id: deploy
+        run: |
+          set +e
+          pnpm run prisma:migrate:deploy > /tmp/deploy.log 2>&1
+          status=$?
+          set -e
+          {
+            echo "### prisma migrate deploy (exit $status)"
+            echo ""
+            echo '```'
+            tail -n 40 /tmp/deploy.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then
+            reason=$(grep -m 1 -E '^Error:|P[0-9]{4}|error:' /tmp/deploy.log || tail -n 1 /tmp/deploy.log)
+            reason=$(printf '%s' "$reason" | tr -d '\r\n' | sed 's/%/%25/g' | cut -c 1-400)
+            echo "::error::Migration failed — $reason"
+            exit "$status"
+          fi
+
+      # Only runs when the migration is rejected. Replays the committed SQL with
+      # ON_ERROR_STOP so the annotation names the statement and line PostgreSQL
+      # refused, which the migration log alone does not show.
+      - name: Locate the rejected statement
+        if: failure() && steps.deploy.outcome == 'failure'
+        run: |
+          container=$(docker ps --format '{{.ID}} {{.Image}}' | awk '/postgres/ {print $1; exit}')
+          if [ -z "$container" ]; then
+            echo "::error::No PostgreSQL service container found to replay against."
+            exit 0
+          fi
+          docker cp prisma/migrations/0_init/migration.sql "$container":/tmp/replay.sql
+          docker exec "$container" psql -U seremoto -d seremoto_test -q -v ON_ERROR_STOP=1 -e \
+            -f /tmp/replay.sql > /tmp/replay.log 2>&1 || true
+          {
+            echo '```'
+            grep -n -A 2 -E 'ERROR:' /tmp/replay.log | head -n 25 || echo "Replay reported no errors."
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Confirm the schema is fully applied
         run: pnpm exec prisma migrate status --schema prisma/schema.prisma
