@@ -63,6 +63,8 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 | `pnpm --filter @seremoto/web test:harness`   | boots the built site against a stand-in API and asserts the auth journey: proxying, hidden cookies, token stripping, rw/en copy |
 | `pnpm turbo test:e2e --filter=@seremoto/api` | register → OTP → session → refresh rotation → RBAC denial → logout against real PostgreSQL                                      |
 | `pnpm run db:check-migration`                | the committed SQL still matches `schema.prisma`                                                                                 |
+| `pnpm run prisma:migrate:deploy`             | applies the committed migrations to the database in `DATABASE_URL`                                                              |
+| `pnpm run prisma:migrate:status`             | reports whether every committed migration is present in that database                                                           |
 
 The e2e suite refuses any `DATABASE_URL` whose name does not contain `test`, so a shared database cannot be cleaned by a test run.
 

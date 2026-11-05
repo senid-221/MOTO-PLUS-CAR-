@@ -34,11 +34,13 @@ None of these have endpoints yet. The tables exist now so that the booking and p
 ## Applying the migration
 
 ```bash
-pnpm run prisma:migrate:deploy     # prisma migrate deploy --schema prisma/schema.prisma
-pnpm exec prisma migrate status --schema prisma/schema.prisma
+pnpm run prisma:migrate:deploy     # node scripts/prisma-migrate.mjs deploy
+pnpm run prisma:migrate:status     # node scripts/prisma-migrate.mjs status
 ```
 
-Pooled connection strings (Neon `…-pooler`, Supabase `…-pooler`) are fine for `DATABASE_URL`. Migrations need a direct, session-pinned connection, so set `DIRECT_DATABASE_URL` to the non-pooled URL when using a pooler — `datasource db` in the schema already reads both.
+Pooled connection strings (Neon `…-pooler`, Supabase `…-pooler`) are fine for `DATABASE_URL`. Migrations need a direct, session-pinned connection, so set `DIRECT_DATABASE_URL` to the non-pooled URL when using a pooler — `datasource db` in the schema reads both.
+
+`scripts/prisma-migrate.mjs` wraps the migrate commands because the schema names `env("DIRECT_DATABASE_URL")`, and Prisma validates every variable referenced in the datasource block before it looks at the database: a checkout or CI job that only sets `DATABASE_URL` fails with `P1012: Environment variable not found: DIRECT_DATABASE_URL` rather than a useful migration error. The wrapper defaults `DIRECT_DATABASE_URL` to `DATABASE_URL`, stops with a clear message when no `DATABASE_URL` exists at all, and then passes the arguments to the real CLI with its output streamed.
 
 **The application never migrates itself at boot.** Migrations run from a controlled deployment step (see `DEPLOYMENT.md`), because several instances starting at once against one schema is how a deployment turns into an outage.
 

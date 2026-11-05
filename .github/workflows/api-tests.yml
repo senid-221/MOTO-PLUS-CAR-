@@ -108,7 +108,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Confirm the schema is fully applied
-        run: pnpm exec prisma migrate status --schema prisma/schema.prisma
+        run: pnpm run prisma:migrate:status
 
       - name: Seed development accounts
         run: pnpm run db:seed

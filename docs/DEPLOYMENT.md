@@ -6,25 +6,25 @@ Two deployables — the NestJS API and the Next.js web app — plus one PostgreS
 
 The API parses its environment through a Zod contract (`apps/api/src/config/environment.ts`) and **refuses to boot** on a missing or malformed value, listing every problem at once. The web app reads three values and defaults the rest.
 
-| Variable                  | Default                        | Notes                                                                                                                                         |
-| ------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NODE_ENV`                | `development`                  | `production` or `staging` forbids `SMS_PROVIDER=log`, marks cookies `Secure`, and blocks `pnpm run db:seed`                                   |
-| `DATABASE_URL`            | —                              | required; pooled URL is fine                                                                                                                  |
-| `DIRECT_DATABASE_URL`     | —                              | set to the non-pooled URL when `DATABASE_URL` goes through a pooler; migrations need a session-pinned connection                              |
-| `REDIS_URL`               | —                              | unused in this milestone; jobs run in-process when it is unset                                                                                |
-| `JWT_ACCESS_SECRET`       | —                              | required, at least 32 characters                                                                                                              |
-| `JWT_REFRESH_SECRET`      | —                              | required, at least 32 characters, **must differ** from the access secret or boot fails                                                        |
-| `ACCESS_TOKEN_TTL`        | `900`                          | seconds, 60–3600                                                                                                                              |
-| `REFRESH_TOKEN_TTL`       | `2592000`                      | seconds, up to 180 days                                                                                                                       |
-| `OTP_TTL_SECONDS`         | `300`                          | 60–900                                                                                                                                        |
-| `OTP_MAX_ATTEMPTS`        | `5`                            | 3–10                                                                                                                                          |
-| `SMS_PROVIDER`            | `log`                          | `log` is a stand-in that never sends; `mtn` and `twilio` are accepted by the contract but have no adapter yet, so the first send fails loudly |
-| `API_PORT`                | `4000`                         |                                                                                                                                               |
-| `API_BASE_URL`            | `http://localhost:4000/api/v1` | web app: where the proxy forwards to                                                                                                          |
-| `APP_WEB_URL`             | `http://localhost:3000`        | absolute URL builder and the metadata base                                                                                                    |
-| `CORS_ALLOWED_ORIGINS`    | `http://localhost:3000`        | comma-separated browser origins allowed to send credentials                                                                                   |
-| `WEB_UPSTREAM_TIMEOUT_MS` | `10000`                        | web app: proxy timeout before it returns `upstream_unreachable`                                                                               |
-| `SEED_PHONE_PREFIX`       | `+2507880000`                  | development seed accounts only                                                                                                                |
+| Variable                  | Default                        | Notes                                                                                                                                                                              |
+| ------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                | `development`                  | `production` or `staging` forbids `SMS_PROVIDER=log`, marks cookies `Secure`, and blocks `pnpm run db:seed`                                                                        |
+| `DATABASE_URL`            | —                              | required; pooled URL is fine                                                                                                                                                       |
+| `DIRECT_DATABASE_URL`     | falls back to `DATABASE_URL`   | set to the non-pooled URL when `DATABASE_URL` goes through a pooler; migrations need a session-pinned connection, and the `prisma:migrate:*` scripts fill this in when it is unset |
+| `REDIS_URL`               | —                              | unused in this milestone; jobs run in-process when it is unset                                                                                                                     |
+| `JWT_ACCESS_SECRET`       | —                              | required, at least 32 characters                                                                                                                                                   |
+| `JWT_REFRESH_SECRET`      | —                              | required, at least 32 characters, **must differ** from the access secret or boot fails                                                                                             |
+| `ACCESS_TOKEN_TTL`        | `900`                          | seconds, 60–3600                                                                                                                                                                   |
+| `REFRESH_TOKEN_TTL`       | `2592000`                      | seconds, up to 180 days                                                                                                                                                            |
+| `OTP_TTL_SECONDS`         | `300`                          | 60–900                                                                                                                                                                             |
+| `OTP_MAX_ATTEMPTS`        | `5`                            | 3–10                                                                                                                                                                               |
+| `SMS_PROVIDER`            | `log`                          | `log` is a stand-in that never sends; `mtn` and `twilio` are accepted by the contract but have no adapter yet, so the first send fails loudly                                      |
+| `API_PORT`                | `4000`                         |                                                                                                                                                                                    |
+| `API_BASE_URL`            | `http://localhost:4000/api/v1` | web app: where the proxy forwards to                                                                                                                                               |
+| `APP_WEB_URL`             | `http://localhost:3000`        | absolute URL builder and the metadata base                                                                                                                                         |
+| `CORS_ALLOWED_ORIGINS`    | `http://localhost:3000`        | comma-separated browser origins allowed to send credentials                                                                                                                        |
+| `WEB_UPSTREAM_TIMEOUT_MS` | `10000`                        | web app: proxy timeout before it returns `upstream_unreachable`                                                                                                                    |
+| `SEED_PHONE_PREFIX`       | `+2507880000`                  | development seed accounts only                                                                                                                                                     |
 
 Generate each secret rather than reusing a sample:
 
@@ -41,7 +41,7 @@ pnpm install --frozen-lockfile          # postinstall runs prisma generate
 pnpm turbo build                        # packages, then both apps
 pnpm run db:check-migration             # committed SQL still matches schema.prisma
 pnpm run prisma:migrate:deploy          # the only step that touches the schema
-pnpm exec prisma migrate status --schema prisma/schema.prisma
+pnpm run prisma:migrate:status          # every committed migration is applied
 ```
 
 Then start the API and the web app. **No application instance runs migrations at boot** — several replicas migrating the same schema simultaneously is a known way to break a deployment, and the specification requires migrations to come from a controlled procedure.
