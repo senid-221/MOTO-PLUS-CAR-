@@ -128,7 +128,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$status" -ne 0 ]; then
             sed -e 's/@seremoto\.api:test:e2e: //' -e 's/\x1b\[[0-9;]*m//g' /tmp/e2e.log \
-              | LC_ALL=C.UTF-8 grep -aE '●|✕|✓|Tests:|Test Suites:|FAIL|Expected|Received|rror|Cannot find|refused|FATAL|timeout|e2e-spec\.ts:[0-9]+' \
+              | LC_ALL=C.UTF-8 grep -aE '●|✕|Tests:|Test Suites:|FAIL|Expected|Received|rror|Cannot find|refused|FATAL|timeout|e2e-spec\.ts:[0-9]+' \
               | head -n 14 > /tmp/e2e-digest.txt || true
             while IFS= read -r line; do
               printf '::error::e2e — %s\n' "$(printf '%s' "$line" | tr -d '\r' | sed 's/%/%25/g' | cut -c 1-260)"

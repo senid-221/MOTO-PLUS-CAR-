@@ -3,7 +3,7 @@ import { type INestApplication, RequestMethod } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { Response } from 'supertest';
-import { AccountStatus, PrismaClient, UserRole } from '@seremoto/prisma-client';
+import { AccountStatus, PrismaClient, SessionStatus, UserRole } from '@seremoto/prisma-client';
 import { AppModule } from '../src/app.module';
 import { API_ROUTE_PREFIX, UNPREFIXED_HEALTH_PATH } from '../src/common/http/route-prefix';
 import { REFRESH_COOKIE_NAME } from '../src/common/http/cookies';
@@ -308,24 +308,48 @@ describe('authentication end to end', () => {
     expect(list.items[0]?.roles).toContain('SUPPORT');
   });
 
-  it('reports REGISTER for a number that cannot sign in yet and LOGIN for one that can', async () => {
-    const unverified = await api()
-      .post(`/${API_ROUTE_PREFIX}/auth/login`)
-      .send({ phone: newPhone() })
+  it('reports REGISTER for an unverified account and LOGIN once the phone is confirmed', async () => {
+    // A number that exists but has never confirmed its phone is still mid-
+    // registration, so sign-in must hand back the REGISTER purpose: guessing
+    // the purpose would reject a perfectly valid code.
+    const pendingPhone = newPhone();
+    await api()
+      .post(`/${API_ROUTE_PREFIX}/auth/register`)
+      .send({ fullName: 'Niyitegeka Ben', phone: pendingPhone })
       .expect(201);
-    expect(data<SendOtpOutput>(unverified).purpose).toBe('REGISTER');
 
-    const { phone } = await signIn('Mutara Olivier');
-    const verified = await api()
+    const pending = await api()
       .post(`/${API_ROUTE_PREFIX}/auth/login`)
-      .send({ phone })
+      .send({ phone: pendingPhone })
       .expect(201);
-    expect(data<SendOtpOutput>(verified).purpose).toBe('LOGIN');
-    expect(data<SendOtpOutput>(verified).phone).toBe(phone);
+    expect(data<SendOtpOutput>(pending).purpose).toBe('REGISTER');
+    expect(data<SendOtpOutput>(pending).phone).toBe(pendingPhone);
+
+    // A number with no account at all is a different answer, and it is a
+    // deliberate one: registration is the entry point for new customers.
+    const unknown = await api().post(`/${API_ROUTE_PREFIX}/auth/login`).send({ phone: newPhone() });
+    expect(unknown.status).toBe(404);
+    expect(errorOf(unknown).code).toBe('NOT_FOUND');
+
+    const verified = await api()
+      .post(`/${API_ROUTE_PREFIX}/auth/verify-otp`)
+      .send({
+        phone: pendingPhone,
+        code: data<SendOtpOutput>(pending).devOtpCode,
+        purpose: 'REGISTER',
+      })
+      .expect(201);
+    expect(data<AuthSession>(verified).user.phone).toBe(pendingPhone);
+
+    const afterVerification = await api()
+      .post(`/${API_ROUTE_PREFIX}/auth/login`)
+      .send({ phone: pendingPhone })
+      .expect(201);
+    expect(data<SendOtpOutput>(afterVerification).purpose).toBe('LOGIN');
   });
 
   it('ends the session on logout and refuses a later refresh', async () => {
-    const { accessToken, refresh } = await signIn('Kamanzi Eric');
+    const { accessToken, refresh, phone } = await signIn('Kamanzi Eric');
 
     const loggedOut = await api()
       .post(`/${API_ROUTE_PREFIX}/auth/logout`)
@@ -334,11 +358,24 @@ describe('authentication end to end', () => {
       .expect(200);
     expect(data<{ revoked: boolean }>(loggedOut).revoked).toBe(true);
 
+    // Revocation is a fact in the database, not just a cleared cookie: the row
+    // stays, marked revoked and timestamped, so a session can be audited later.
+    const sessions = await prisma.session.findMany({
+      where: { user: { phone } },
+      select: { status: true, revokedAt: true },
+    });
+    expect(sessions.length).toBeGreaterThan(0);
+    expect(
+      sessions.every((row) => row.status === SessionStatus.REVOKED && row.revokedAt !== null),
+    ).toBe(true);
+
     const afterLogout = await api()
       .post(`/${API_ROUTE_PREFIX}/auth/refresh`)
       .set('Cookie', `${REFRESH_COOKIE_NAME}=${refresh}`);
+    // The presented token is known and already spent, so this is the reuse path:
+    // 401 with the invalid-token code rather than a generic "sign in" answer.
     expect(afterLogout.status).toBe(401);
-    expect(errorOf(afterLogout).code).toBe('UNAUTHENTICATED');
+    expect(errorOf(afterLogout).code).toBe('TOKEN_INVALID');
 
     const meAfter = await api()
       .get(`/${API_ROUTE_PREFIX}/auth/me`)

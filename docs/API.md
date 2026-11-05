@@ -51,7 +51,9 @@ Error codes: `VALIDATION_ERROR`, `UNAUTHENTICATED`, `FORBIDDEN`, `NOT_FOUND`, `C
 { "phone": "+250781234567", "purpose": "LOGIN", "expiresInSeconds": 300, "devOtpCode": "246813" }
 ```
 
-`purpose` is what the client must echo back at verify time. A number that has never confirmed its phone gets `REGISTER` even when the visitor pressed _log in_ — guessing the purpose would reject a perfectly valid code.
+`purpose` is what the client must echo back at verify time. A number that has never confirmed its phone gets `REGISTER` even when the visitor pressed _log in_ — guessing the purpose would reject a perfectly valid code. A number with **no account at all** returns `NOT_FOUND` (404): registration is the entry point for a new customer, and a sign-in request must never quietly create one. The trade-off is recorded in [SECURITY.md](SECURITY.md) because it does tell a caller whether a number is registered.
+
+`POST /auth/refresh` after a logout returns 401 `TOKEN_INVALID`, not `UNAUTHENTICATED`: the presented token is recognised and already spent, which is the reuse branch, and it revokes every remaining session for that account as a precaution.
 
 ### `POST /auth/verify-otp` — 201
 
