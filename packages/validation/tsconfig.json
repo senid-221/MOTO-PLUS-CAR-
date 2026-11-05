@@ -1,0 +1,10 @@
+{
+  "extends": "@seremoto/config/tsconfig/library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node", "jest"]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

@@ -1,0 +1,46 @@
+{
+  "name": "seremoto-rwanda",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SERE MOTO Rwanda — motorcycle mobility platform (API, web, shared packages)",
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,css}\"",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema prisma/schema.prisma",
+    "db:seed": "tsx prisma/seed/seed.ts",
+    "db:check-migration": "node scripts/check-migration.mjs",
+    "typecheck:seed": "tsc -p tsconfig.seed.json --noEmit",
+    "verify": "pnpm run typecheck && pnpm run typecheck:seed && pnpm run db:check-migration && pnpm run lint && pnpm run test",
+    "postinstall": "prisma generate --schema prisma/schema.prisma"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "tsx prisma/seed/seed.ts"
+  },
+  "devDependencies": {
+    "@prisma/client": "6.19.3",
+    "@seremoto/config": "workspace:*",
+    "@seremoto/prisma-client": "workspace:*",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.17.0",
+    "prettier": "^3.3.3",
+    "prisma": "6.19.3",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@seremoto/prisma-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generated Prisma client for SERE MOTO (single source for all apps)",
+  "main": "generated/client/index.js",
+  "types": "generated/client/index.d.ts",
+  "files": [
+    "generated"
+  ],
+  "scripts": {
+    "build": "prisma generate --schema ../../prisma/schema.prisma",
+    "typecheck": "tsc --noEmit --skipLibCheck generated/client/index.d.ts",
+    "lint": "node -e \"0\""
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "prisma": "6.19.3"
+  }
+}

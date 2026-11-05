@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+.next/
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+
+# Generated Prisma client (rebuilt by `prisma generate`)
+packages/prisma-client/generated/
+
+# Turbo
+.turbo/
+
+# Environment and secrets — never committed (this repository is public)
+.env
+.env.*
+!.env.example
+*.pem
+secrets/
+
+# Databases and local data
+pgdata/
+*.sqlite
+*.db
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+
+# Mobile (wired in a later milestone)
+apps/mobile/node_modules/
+apps/mobile/.expo/
+.expo/
+
+# Test artifacts
+test-results/
+playwright-report/

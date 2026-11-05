@@ -1,0 +1,916 @@
+// SERE MOTO Rwanda — PostgreSQL schema (Prisma).
+// Based on Part IV of the product specification, extended with the tables that
+// authentication, sessions and money auditing cannot work without.
+// Conventions: UUID primary keys, UTC timestamps, decimal-safe money, RWF default.
+
+generator client {
+  provider = "prisma-client-js"
+  // Generated into a single workspace package so every consumer imports the
+  // same client and pnpm's symlink layout cannot shadow it.
+  output   = "../packages/prisma-client/generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  CUSTOMER
+  RIDER
+  MERCHANT
+  GARAGE
+  COOPERATIVE_MANAGER
+  BUSINESS_CLIENT
+  SUPPORT
+  MODERATOR
+  FINANCE
+  OPERATIONS
+  VERIFICATION_OFFICER
+  CONTENT_MANAGER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum AccountStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+  DELETED
+}
+
+enum VerificationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum RiderStatus {
+  OFFLINE
+  ONLINE
+  BUSY
+  SUSPENDED
+}
+
+enum ServiceType {
+  RIDE
+  CARGO
+  SHOPPING
+  MONTHLY
+  BUSINESS_DELIVERY
+}
+
+enum BookingStatus {
+  REQUESTED
+  MATCHING
+  ACCEPTED
+  ARRIVING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  EXPIRED
+  DISPUTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentProvider {
+  MTN_MOMO
+}
+
+enum DocumentType {
+  NATIONAL_ID
+  DRIVING_LICENSE
+  MOTORCYCLE_REGISTRATION
+  INSURANCE
+  BUSINESS_LICENSE
+  OTHER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  READY
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  OUT_OF_STOCK
+  SUSPENDED
+  ARCHIVED
+}
+
+enum ContractStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  REFUND
+  COMMISSION
+  SETTLEMENT
+  ADJUSTMENT
+}
+
+enum OtpPurpose {
+  REGISTER
+  LOGIN
+  PASSWORD_RESET
+  PHONE_CHANGE
+}
+
+enum SessionStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum RefundStatus {
+  REQUESTED
+  PROCESSING
+  SUCCESS
+  FAILED
+}
+
+enum ComplaintStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum ComplaintCategory {
+  BOOKING
+  DELIVERY
+  PAYMENT
+  RIDER_CONDUCT
+  MARKETPLACE
+  DOCUMENT
+  OTHER
+}
+
+// ---------------------------------------------------------------------------
+// Identity and access
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String        @id @default(uuid()) @db.Uuid
+  fullName          String
+  phone             String        @unique
+  email             String?       @unique
+  passwordHash      String?
+  preferredLanguage String        @default("rw")
+  status            AccountStatus @default(PENDING)
+  phoneVerifiedAt   DateTime?     @db.Timestamptz(6)
+  emailVerifiedAt   DateTime?     @db.Timestamptz(6)
+  suspendedAt       DateTime?     @db.Timestamptz(6)
+  suspensionReason  String?
+  lastLoginAt       DateTime?     @db.Timestamptz(6)
+  createdAt         DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime      @updatedAt @db.Timestamptz(6)
+
+  roles             UserRole[]
+  customerProfile   CustomerProfile?
+  riderProfile      RiderProfile?
+  merchantProfile   MerchantProfile?
+  wallets           Wallet[]
+  sessions          Session[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]              @relation("AuditActor")
+  memberships       CooperativeMembership[] @relation("CooperativeMember")
+  reviewedDocuments RiderDocument[]         @relation("DocumentReviewer")
+  consents          ConsentRecord[]         @relation("UserConsent")
+  raisedComplaints  Complaint[]             @relation("ComplaintReporter")
+
+  @@index([status])
+  @@index([phone, status])
+}
+
+/// Single-use OTP challenges. The code is stored hashed, never in the clear.
+model OtpChallenge {
+  id                String     @id @default(uuid()) @db.Uuid
+  phone             String
+  purpose           OtpPurpose
+  codeHash          String
+  attempts          Int        @default(0)
+  maxAttempts       Int        @default(5)
+  consumedAt        DateTime?  @db.Timestamptz(6)
+  invalidatedAt     DateTime?  @db.Timestamptz(6)
+  deliveryChannel   String     @default("sms")
+  deliveryReference String?
+  expiresAt         DateTime   @db.Timestamptz(6)
+  createdAt         DateTime   @default(now()) @db.Timestamptz(6)
+
+  @@index([phone, purpose, createdAt])
+  @@index([expiresAt])
+}
+
+/// Refresh tokens are stored hashed and tied to a device fingerprint.
+model Session {
+  id               String        @id @default(uuid()) @db.Uuid
+  userId           String        @db.Uuid
+  refreshTokenHash String        @unique
+  status           SessionStatus @default(ACTIVE)
+  deviceLabel      String?
+  userAgent        String?
+  ipAddress        String?
+  issuedAt         DateTime      @default(now()) @db.Timestamptz(6)
+  lastUsedAt       DateTime      @default(now()) @db.Timestamptz(6)
+  expiresAt        DateTime      @db.Timestamptz(6)
+  revokedAt        DateTime?     @db.Timestamptz(6)
+  revokedReason    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([expiresAt])
+}
+
+/// Consent and privacy records required before processing personal data.
+model ConsentRecord {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  key       String
+  version   String
+  granted   Boolean  @default(true)
+  metadata  Json?
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation("UserConsent", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key, version])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Customer, rider and cooperative profiles
+// ---------------------------------------------------------------------------
+
+model CustomerProfile {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @unique @db.Uuid
+  avatarUrl      String?
+  defaultAddress String?
+  homeLat        Decimal? @db.Decimal(10, 7)
+  homeLng        Decimal? @db.Decimal(10, 7)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings   Booking[]
+  reviews    Review[]          @relation("CustomerReview")
+  orders     ProductOrder[]    @relation("CustomerOrders")
+  contracts  MonthlyContract[] @relation("ContractCustomer")
+  complaints Complaint[]       @relation("ComplaintCustomer")
+}
+
+model RiderProfile {
+  id                    String             @id @default(uuid()) @db.Uuid
+  userId                String             @unique @db.Uuid
+  status                RiderStatus        @default(OFFLINE)
+  verification          VerificationStatus @default(DRAFT)
+  profileImageUrl       String?
+  licenceNumber         String?
+  licenceExpiry         DateTime?          @db.Timestamptz(6)
+  nationality           String?
+  district              String?
+  sector                String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  cooperativeId         String?            @db.Uuid
+  motorcycleId          String?            @unique @db.Uuid
+  rating                Decimal            @default(0) @db.Decimal(3, 2)
+  completedJobs         Int                @default(0)
+  submittedAt           DateTime?          @db.Timestamptz(6)
+  approvedAt            DateTime?          @db.Timestamptz(6)
+  createdAt             DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime           @updatedAt @db.Timestamptz(6)
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  motorcycle  Motorcycle?       @relation(fields: [motorcycleId], references: [id])
+  cooperative Cooperative?      @relation(fields: [cooperativeId], references: [id])
+  documents   RiderDocument[]
+  bookings    Booking[]
+  locations   RiderLocation[]
+  reviews     Review[]          @relation("RiderReview")
+  contracts   MonthlyContract[] @relation("ContractRider")
+  complaints  Complaint[]       @relation("ComplaintReportedRider")
+
+  @@index([status, verification])
+  @@index([cooperativeId])
+  @@index([district, sector])
+}
+
+model Motorcycle {
+  id             String   @id @default(uuid()) @db.Uuid
+  plateNumber    String   @unique
+  make           String?
+  model          String?
+  year           Int?
+  color          String?
+  motorcycleType String?
+  isElectric     Boolean  @default(false)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+
+  rider RiderProfile?
+}
+
+model RiderDocument {
+  id             String             @id @default(uuid()) @db.Uuid
+  riderId        String             @db.Uuid
+  type           DocumentType
+  fileKey        String
+  documentNumber String?
+  issuedAt       DateTime?          @db.Timestamptz(6)
+  expiresAt      DateTime?          @db.Timestamptz(6)
+  status         VerificationStatus @default(SUBMITTED)
+  reviewNote     String?
+  reviewedBy     String?            @db.Uuid
+  reviewedAt     DateTime?          @db.Timestamptz(6)
+  createdAt      DateTime           @default(now()) @db.Timestamptz(6)
+
+  rider    RiderProfile @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  reviewer User?        @relation("DocumentReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([riderId, status])
+  @@index([expiresAt])
+  @@index([status, expiresAt])
+}
+
+model Cooperative {
+  id             String             @id @default(uuid()) @db.Uuid
+  name           String
+  registrationNo String?            @unique
+  description    String?
+  district       String
+  sector         String?
+  phone          String?
+  email          String?
+  verification   VerificationStatus @default(DRAFT)
+  verifiedAt     DateTime?          @db.Timestamptz(6)
+  createdAt      DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime           @updatedAt @db.Timestamptz(6)
+
+  riders        RiderProfile[]
+  memberships   CooperativeMembership[]
+  announcements Announcement[]
+  documents     CooperativeDocument[]
+}
+
+model CooperativeMembership {
+  id            String    @id @default(uuid()) @db.Uuid
+  cooperativeId String    @db.Uuid
+  userId        String    @db.Uuid
+  position      String?
+  role          String    @default("MEMBER")
+  requestedAt   DateTime  @default(now()) @db.Timestamptz(6)
+  approvedAt    DateTime? @db.Timestamptz(6)
+  terminatedAt  DateTime? @db.Timestamptz(6)
+
+  cooperative Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  user        User        @relation("CooperativeMember", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cooperativeId, userId])
+  @@index([userId])
+}
+
+/// Cooperative document repository (statutes, registration certificates).
+model CooperativeDocument {
+  id            String             @id @default(uuid()) @db.Uuid
+  cooperativeId String             @db.Uuid
+  type          String
+  fileKey       String
+  status        VerificationStatus @default(SUBMITTED)
+  uploadedAt    DateTime           @default(now()) @db.Timestamptz(6)
+
+  cooperative Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+
+  @@index([cooperativeId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Bookings, deliveries, contracts
+// ---------------------------------------------------------------------------
+
+model Booking {
+  id          String        @id @default(uuid()) @db.Uuid
+  reference   String        @unique
+  customerId  String        @db.Uuid
+  riderId     String?       @db.Uuid
+  serviceType ServiceType
+  status      BookingStatus @default(REQUESTED)
+
+  pickupAddress String
+  pickupLat     Decimal @db.Decimal(10, 7)
+  pickupLng     Decimal @db.Decimal(10, 7)
+
+  destinationAddress String?
+  destinationLat     Decimal? @db.Decimal(10, 7)
+  destinationLng     Decimal? @db.Decimal(10, 7)
+
+  distanceKm        Decimal? @db.Decimal(10, 2)
+  estimatedFare     Decimal? @db.Decimal(12, 2)
+  finalFare         Decimal? @db.Decimal(12, 2)
+  currency          String   @default("RWF")
+  commissionRateBps Int?
+  note              String?
+
+  passengerCount       Int       @default(1)
+  cargoCategory        String?
+  cargoDescription     String?
+  packageWeightKg      Decimal?  @db.Decimal(6, 2)
+  declaredValue        Decimal?  @db.Decimal(12, 2)
+  recipientName        String?
+  recipientPhone       String?
+  specialHandling      String?
+  pickupConfirmedAt    DateTime? @db.Timestamptz(6)
+  proofOfDeliveryKey   String?
+  recipientConfirmedAt DateTime? @db.Timestamptz(6)
+
+  acceptedAt         DateTime? @db.Timestamptz(6)
+  startedAt          DateTime? @db.Timestamptz(6)
+  completedAt        DateTime? @db.Timestamptz(6)
+  cancelledAt        DateTime? @db.Timestamptz(6)
+  cancelledBy        String?
+  cancellationReason String?
+  expiresAt          DateTime? @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  customer      CustomerProfile      @relation(fields: [customerId], references: [id])
+  rider         RiderProfile?        @relation(fields: [riderId], references: [id])
+  payment       Payment?
+  reviews       Review[]
+  statusHistory BookingStatusEvent[]
+  complaints    Complaint[]          @relation("BookingComplaint")
+  locations     RiderLocation[]      @relation("BookingTracking")
+
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
+  @@index([riderId, status])
+  @@index([serviceType, status])
+  @@index([status, expiresAt])
+}
+
+/// Append-only history of every booking status change.
+model BookingStatusEvent {
+  id         String         @id @default(uuid()) @db.Uuid
+  bookingId  String         @db.Uuid
+  fromStatus BookingStatus?
+  toStatus   BookingStatus
+  reason     String?
+  actorId    String?        @db.Uuid
+  createdAt  DateTime       @default(now()) @db.Timestamptz(6)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
+}
+
+/// Location pings. Linked to a booking while a service is in progress.
+model RiderLocation {
+  id         String   @id @default(uuid()) @db.Uuid
+  riderId    String   @db.Uuid
+  bookingId  String?  @db.Uuid
+  latitude   Decimal  @db.Decimal(10, 7)
+  longitude  Decimal  @db.Decimal(10, 7)
+  accuracyM  Decimal? @db.Decimal(8, 2)
+  recordedAt DateTime @default(now()) @db.Timestamptz(6)
+
+  rider   RiderProfile @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  booking Booking?     @relation("BookingTracking", fields: [bookingId], references: [id])
+
+  @@index([riderId, recordedAt])
+  @@index([bookingId, recordedAt])
+}
+
+model MonthlyContract {
+  id                 String         @id @default(uuid()) @db.Uuid
+  reference          String         @unique
+  customerId         String         @db.Uuid
+  riderId            String         @db.Uuid
+  pickupAddress      String
+  destination        String
+  schedule           Json?
+  beneficiaries      Json?
+  monthlyPrice       Decimal        @db.Decimal(12, 2)
+  currency           String         @default("RWF")
+  startDate          DateTime       @db.Timestamptz(6)
+  endDate            DateTime       @db.Timestamptz(6)
+  status             ContractStatus @default(PENDING)
+  cancellationReason String?
+  createdAt          DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @db.Timestamptz(6)
+
+  customer CustomerProfile @relation("ContractCustomer", fields: [customerId], references: [id])
+  rider    RiderProfile    @relation("ContractRider", fields: [riderId], references: [id])
+
+  @@index([status, endDate])
+  @@index([riderId, status])
+  @@index([customerId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Money
+// ---------------------------------------------------------------------------
+
+model Payment {
+  id                String          @id @default(uuid()) @db.Uuid
+  reference         String          @unique
+  bookingId         String?         @unique @db.Uuid
+  productOrderId    String?         @unique @db.Uuid
+  provider          PaymentProvider @default(MTN_MOMO)
+  status            PaymentStatus   @default(PENDING)
+  amount            Decimal         @db.Decimal(12, 2)
+  currency          String          @default("RWF")
+  providerReference String?         @unique
+  idempotencyKey    String          @unique
+  payerPhone        String?
+  failureReason     String?
+  verifiedAt        DateTime?       @db.Timestamptz(6)
+  paidAt            DateTime?       @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @db.Timestamptz(6)
+
+  booking       Booking?              @relation(fields: [bookingId], references: [id])
+  productOrder  ProductOrder?         @relation(fields: [productOrderId], references: [id])
+  refunds       Refund[]
+  webhookEvents PaymentWebhookEvent[]
+
+  @@index([status, createdAt])
+}
+
+/// Raw provider callbacks, kept for reconciliation and dispute resolution.
+model PaymentWebhookEvent {
+  id              String          @id @default(uuid()) @db.Uuid
+  provider        PaymentProvider
+  providerEventId String
+  paymentId       String?         @db.Uuid
+  eventType       String
+  payload         Json
+  signatureValid  Boolean         @default(false)
+  processed       Boolean         @default(false)
+  processingError String?
+  receivedAt      DateTime        @default(now()) @db.Timestamptz(6)
+  processedAt     DateTime?       @db.Timestamptz(6)
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@unique([provider, providerEventId])
+  @@index([paymentId])
+  @@index([processed, receivedAt])
+}
+
+model Refund {
+  id                String       @id @default(uuid()) @db.Uuid
+  reference         String       @unique
+  paymentId         String       @db.Uuid
+  amount            Decimal      @db.Decimal(12, 2)
+  currency          String       @default("RWF")
+  status            RefundStatus @default(REQUESTED)
+  reason            String
+  requestedBy       String?      @db.Uuid
+  providerReference String?      @unique
+  completedAt       DateTime?    @db.Timestamptz(6)
+  createdAt         DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt         DateTime     @updatedAt @db.Timestamptz(6)
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId, status])
+}
+
+model Wallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  /// Owner is a rider, merchant or cooperative. Resolved in application code
+  /// so one table can hold every balance type.
+  ownerId   String   @unique @db.Uuid
+  ownerType String   @default("USER")
+  balance   Decimal  @default(0) @db.Decimal(14, 2)
+  currency  String   @default("RWF")
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  ownerUserId String?       @db.Uuid
+  owner       User?         @relation(fields: [ownerUserId], references: [id])
+  entries     WalletEntry[]
+
+  @@index([ownerType])
+}
+
+/// Immutable ledger. Balances are reconciled against these rows, never trusted
+/// from a client-supplied amount.
+model WalletEntry {
+  id               String          @id @default(uuid()) @db.Uuid
+  walletId         String          @db.Uuid
+  type             TransactionType
+  amount           Decimal         @db.Decimal(14, 2)
+  currency         String          @default("RWF")
+  reference        String          @unique
+  description      String?
+  relatedPaymentId String?         @db.Uuid
+  relatedBookingId String?         @db.Uuid
+  createdAt        DateTime        @default(now()) @db.Timestamptz(6)
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@index([walletId, createdAt])
+}
+
+/// Commission settings per service type and zone. Read by fare calculation.
+model PricingRule {
+  id                String      @id @default(uuid()) @db.Uuid
+  serviceType       ServiceType
+  zone              String      @default("NATIONWIDE")
+  currency          String      @default("RWF")
+  baseFare          Decimal     @db.Decimal(12, 2)
+  perKmFare         Decimal     @db.Decimal(12, 2)
+  minimumFare       Decimal     @db.Decimal(12, 2)
+  waitingRatePerMin Decimal     @default(0) @db.Decimal(12, 2)
+  commissionRateBps Int         @default(1500)
+  platformFeeBps    Int         @default(0)
+  active            Boolean     @default(true)
+  validFrom         DateTime    @default(now()) @db.Timestamptz(6)
+  validTo           DateTime?   @db.Timestamptz(6)
+  updatedAt         DateTime    @updatedAt @db.Timestamptz(6)
+
+  @@unique([serviceType, zone, validFrom])
+  @@index([serviceType, active])
+}
+
+/// Where each service is offered. Requests outside an active area are refused.
+model ServiceArea {
+  id           String        @id @default(uuid()) @db.Uuid
+  district     String
+  sector       String?
+  serviceTypes ServiceType[]
+  active       Boolean       @default(true)
+  updatedAt    DateTime      @updatedAt @db.Timestamptz(6)
+
+  @@unique([district, sector])
+  @@index([active])
+}
+
+// ---------------------------------------------------------------------------
+// Marketplace
+// ---------------------------------------------------------------------------
+
+model MerchantProfile {
+  id           String             @id @default(uuid()) @db.Uuid
+  userId       String             @unique @db.Uuid
+  businessName String
+  description  String?
+  phone        String?
+  email        String?
+  district     String?
+  sector       String?
+  address      String?
+  logoKey      String?
+  verification VerificationStatus @default(DRAFT)
+  verified     Boolean            @default(false)
+  createdAt    DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime           @updatedAt @db.Timestamptz(6)
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products Product[]
+  orders   ProductOrder[]
+
+  @@index([verification])
+}
+
+model Product {
+  id          String        @id @default(uuid()) @db.Uuid
+  merchantId  String        @db.Uuid
+  name        String
+  slug        String?       @unique
+  description String?
+  category    String
+  price       Decimal       @db.Decimal(12, 2)
+  currency    String        @default("RWF")
+  stock       Int           @default(0)
+  status      ProductStatus @default(DRAFT)
+  imageKey    String?
+  featured    Boolean       @default(false)
+  createdAt   DateTime      @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @db.Timestamptz(6)
+
+  merchant   MerchantProfile    @relation(fields: [merchantId], references: [id])
+  orderItems ProductOrderItem[]
+  images     ProductImage[]
+
+  @@index([category, status])
+  @@index([merchantId, status])
+  @@index([featured, status])
+}
+
+/// Product image collections. The first image is the catalogue thumbnail.
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  fileKey   String
+  altText   String?
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+}
+
+model ProductOrder {
+  id          String      @id @default(uuid()) @db.Uuid
+  reference   String      @unique
+  merchantId  String      @db.Uuid
+  customerId  String      @db.Uuid
+  status      OrderStatus @default(PENDING)
+  subtotal    Decimal     @db.Decimal(12, 2)
+  deliveryFee Decimal     @default(0) @db.Decimal(12, 2)
+  commission  Decimal     @default(0) @db.Decimal(12, 2)
+  total       Decimal     @db.Decimal(12, 2)
+  currency    String      @default("RWF")
+  createdAt   DateTime    @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime    @updatedAt @db.Timestamptz(6)
+
+  merchant MerchantProfile    @relation(fields: [merchantId], references: [id])
+  customer CustomerProfile    @relation("CustomerOrders", fields: [customerId], references: [id])
+  items    ProductOrderItem[]
+  payment  Payment?
+
+  @@index([customerId, createdAt])
+  @@index([merchantId, status])
+}
+
+model ProductOrderItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  orderId   String  @db.Uuid
+  productId String  @db.Uuid
+  quantity  Int
+  unitPrice Decimal @db.Decimal(12, 2)
+  currency  String  @default("RWF")
+
+  order   ProductOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+}
+
+// ---------------------------------------------------------------------------
+// Reviews, notifications, content, complaints
+// ---------------------------------------------------------------------------
+
+model Review {
+  id         String   @id @default(uuid()) @db.Uuid
+  bookingId  String   @db.Uuid
+  riderId    String   @db.Uuid
+  customerId String   @db.Uuid
+  rating     Int
+  comment    String?
+  language   String   @default("rw")
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  booking  Booking         @relation(fields: [bookingId], references: [id])
+  rider    RiderProfile    @relation("RiderReview", fields: [riderId], references: [id])
+  customer CustomerProfile @relation("CustomerReview", fields: [customerId], references: [id])
+
+  @@unique([bookingId, customerId])
+  @@index([riderId, createdAt])
+}
+
+model Notification {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @db.Uuid
+  title     String
+  body      String
+  channel   String
+  language  String             @default("rw")
+  category  String?
+  metadata  Json?
+  status    NotificationStatus @default(PENDING)
+  readAt    DateTime?          @db.Timestamptz(6)
+  createdAt DateTime           @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status, createdAt])
+}
+
+/// Per-user notification preferences for non-essential channels.
+model NotificationPreference {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  category  String
+  inApp     Boolean  @default(true)
+  push      Boolean  @default(true)
+  sms       Boolean  @default(false)
+  email     Boolean  @default(false)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([userId, category])
+}
+
+model Announcement {
+  id            String    @id @default(uuid()) @db.Uuid
+  cooperativeId String?   @db.Uuid
+  title         String
+  content       String
+  language      String    @default("rw")
+  kind          String    @default("COOPERATIVE")
+  sourceOrg     String?
+  sourceUrl     String?
+  effectiveDate DateTime? @db.Timestamptz(6)
+  verifiedAt    DateTime? @db.Timestamptz(6)
+  publishedAt   DateTime? @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @db.Timestamptz(6)
+
+  cooperative Cooperative? @relation(fields: [cooperativeId], references: [id])
+
+  @@index([publishedAt])
+  @@index([kind, publishedAt])
+}
+
+model Complaint {
+  id              String            @id @default(uuid()) @db.Uuid
+  reference       String            @unique
+  category        ComplaintCategory
+  status          ComplaintStatus   @default(OPEN)
+  description     String
+  language        String            @default("rw")
+  reporterId      String            @db.Uuid
+  customerId      String?           @db.Uuid
+  bookingId       String?           @db.Uuid
+  reportedRiderId String?           @db.Uuid
+  resolution      String?
+  resolvedBy      String?           @db.Uuid
+  resolvedAt      DateTime?         @db.Timestamptz(6)
+  createdAt       DateTime          @default(now()) @db.Timestamptz(6)
+  updatedAt       DateTime          @updatedAt @db.Timestamptz(6)
+
+  reporter      User             @relation("ComplaintReporter", fields: [reporterId], references: [id])
+  customer      CustomerProfile? @relation("ComplaintCustomer", fields: [customerId], references: [id])
+  booking       Booking?         @relation("BookingComplaint", fields: [bookingId], references: [id])
+  reportedRider RiderProfile?    @relation("ComplaintReportedRider", fields: [reportedRiderId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([reporterId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action, createdAt])
+}

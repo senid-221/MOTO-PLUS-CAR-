@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Types, lint, tests, builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # The postinstall hook runs `prisma generate`, so the client used by every
+      # package exists before the first type check.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify workspace
+        run: pnpm run verify
+
+      - name: Build every package and application
+        run: pnpm turbo build
+
+  web-auth-journey:
+    name: Web authentication journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the web application
+        run: pnpm turbo build --filter=@seremoto/web
+
+      # Boots the built site against a stand-in API so the proxy, the cookies and
+      # the rw/en copy are checked the same way for every pull request.
+      - name: Run the browser-free auth harness
+        run: pnpm --filter @seremoto/web test:harness

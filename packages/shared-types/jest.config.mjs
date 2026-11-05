@@ -1,0 +1,22 @@
+export default {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/*.test.ts'],
+  transform: {
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          module: 'CommonJS',
+          moduleResolution: 'Node',
+          target: 'ES2022',
+          esModuleInterop: true,
+          strict: true,
+          noUncheckedIndexedAccess: true,
+          skipLibCheck: true,
+        },
+      },
+    ],
+  },
+};

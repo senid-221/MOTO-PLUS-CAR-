@@ -1,0 +1,76 @@
+name: API tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  auth-e2e:
+    name: Authentication and RBAC on PostgreSQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: seremoto
+          POSTGRES_PASSWORD: seremoto
+          POSTGRES_DB: seremoto_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U seremoto -d seremoto_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      NODE_ENV: test
+      SMS_PROVIDER: log
+      DATABASE_URL: postgresql://seremoto:seremoto@localhost:5432/seremoto_test?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Throwaway signing keys for this job only. They are generated here rather
+      # than stored as repository secrets so no credential is ever committed or
+      # shared, and the environment contract still refuses to boot without them.
+      - name: Provision one-time signing keys
+        run: |
+          echo "JWT_ACCESS_SECRET=$(node -e 'console.log(require("node:crypto").randomBytes(32).toString("hex"))')" >> "$GITHUB_ENV"
+          echo "JWT_REFRESH_SECRET=$(node -e 'console.log(require("node:crypto").randomBytes(32).toString("hex"))')" >> "$GITHUB_ENV"
+
+      - name: Check the committed migration matches the schema
+        run: pnpm run db:check-migration
+
+      - name: Apply migrations
+        run: pnpm run prisma:migrate:deploy
+
+      - name: Confirm the schema is fully applied
+        run: pnpm exec prisma migrate status --schema prisma/schema.prisma
+
+      - name: Seed development accounts
+        run: pnpm run db:seed
+
+      - name: Run the authentication end-to-end suite
+        run: pnpm turbo test:e2e --filter=@seremoto/api

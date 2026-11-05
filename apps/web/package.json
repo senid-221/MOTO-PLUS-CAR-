@@ -1,0 +1,30 @@
+{
+  "name": "@seremoto/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SERE MOTO public site, customer web, merchant, cooperative and admin portals",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "eslint app components lib messages --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test:harness": "node scripts/auth-harness.mjs"
+  },
+  "dependencies": {
+    "@seremoto/localization": "workspace:*",
+    "@seremoto/shared-types": "workspace:*",
+    "@seremoto/validation": "workspace:*",
+    "next": "^15.1.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@seremoto/config": "workspace:*",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2"
+  }
+}
