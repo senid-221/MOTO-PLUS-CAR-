@@ -11,12 +11,12 @@ The first milestone is complete: monorepo foundation plus database and authentic
 | Area                                                                                       | Status                                                |
 | ------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
 | pnpm workspaces + Turborepo, four shared packages, two apps                                | done                                                  |
-| PostgreSQL schema (33 tables, 19 enums) and the initial migration                          | written, migration drift gate green                   |
-| Phone OTP registration, login, sessions, refresh rotation, reuse detection                 | done, unit + e2e suite                                |
+| PostgreSQL schema (33 tables, 19 enums) and the initial migration                          | applied on PostgreSQL 16 in CI; drift gate green      |
+| Phone OTP registration, login, sessions, refresh rotation, reuse detection                 | done — 105 unit tests, 12 e2e journeys green          |
 | Roles and permissions for the 14 personas, enforced per request                            | done                                                  |
 | Next.js web: home, register, login, verify, account; rw/en switch that never logs out      | done                                                  |
-| CI: quality job, web journey job, PostgreSQL e2e job                                       | defined in `.github/workflows`                        |
-| Migration applied to a hosted database                                                     | **awaiting the `DATABASE_URL` from Neon or Supabase** |
+| CI: quality job, web journey job, PostgreSQL e2e job                                       | green on every push to `main`                         |
+| Migration applied to **your** hosted database                                              | **awaiting the `DATABASE_URL` from Neon or Supabase** |
 | Bookings, riders onboarding, payments, marketplace, cooperative, admin portals, mobile app | not started                                           |
 
 ## Layout
