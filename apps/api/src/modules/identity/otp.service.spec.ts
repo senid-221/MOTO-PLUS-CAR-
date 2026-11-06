@@ -95,7 +95,11 @@ function build(
 
   const prisma = {
     otpChallenge,
-    $transaction: jest.fn(async (fn: (tx: unknown) => Promise<unknown>) => fn({ otpChallenge })),
+    // Both transaction shapes are accepted: the interactive callback form and
+    // the statement-array form that OtpService issues against a hosted database.
+    $transaction: jest.fn(async (arg: ((tx: unknown) => Promise<unknown>) | Promise<unknown>[]) =>
+      typeof arg === 'function' ? arg({ otpChallenge }) : Promise.all(arg),
+    ),
   };
 
   const service = new OtpService(

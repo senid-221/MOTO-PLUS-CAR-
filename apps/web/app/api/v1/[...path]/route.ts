@@ -69,15 +69,18 @@ function errorResponse(
   message: string,
   status: number,
   detailCode?: string,
+  extraHeaders?: Headers,
 ): Response {
   const body: ApiErrorBody = {
     success: false,
     error: { code, message, details: detailCode ? [{ code: detailCode, message }] : [] },
   };
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+  const headers = new Headers({
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
   });
+  extraHeaders?.forEach((value, key) => headers.append(key, value));
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 /** Drops the access token from a session payload; it lives in a cookie now. */
@@ -104,6 +107,11 @@ async function proxy(request: Request, context: RouteContext): Promise<Response>
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
 
+  // Log Out has to leave this browser even when the API never answers, otherwise
+  // a cold or unreachable database turns one refused call into a screen that
+  // keeps offering Account and keeps sending a token the visitor tried to drop.
+  const asksToSignOut = route === 'auth/logout';
+
   let upstream: Response;
   try {
     upstream = await fetch(upstreamUrl(path, new URL(request.url).search), {
@@ -115,11 +123,14 @@ async function proxy(request: Request, context: RouteContext): Promise<Response>
       signal: controller.signal,
     });
   } catch {
+    const dropped = new Headers();
+    if (asksToSignOut) dropped.append('set-cookie', clearAccessCookie(secure));
     return errorResponse(
       'INTERNAL_ERROR',
       'The API is not reachable from the web server.',
       502,
       'upstream_unreachable',
+      dropped,
     );
   } finally {
     clearTimeout(timeout);
@@ -138,7 +149,7 @@ async function proxy(request: Request, context: RouteContext): Promise<Response>
   responseHeaders.set('cache-control', 'no-store');
 
   const endsSession =
-    route === 'auth/logout' ||
+    asksToSignOut ||
     (route === 'auth/refresh' && (upstream.status === 401 || upstream.status === 403));
   if (endsSession) responseHeaders.append('set-cookie', clearAccessCookie(secure));
 

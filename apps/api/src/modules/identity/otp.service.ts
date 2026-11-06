@@ -60,22 +60,38 @@ export class OtpService {
     const code = generateOtpCode();
     const expiresInSeconds = this.env.OTP_TTL_SECONDS;
 
-    const challenge = await this.prisma.$transaction(async (tx) => {
-      await tx.otpChallenge.updateMany({
-        where: { phone, purpose, consumedAt: null, invalidatedAt: null },
-        data: { invalidatedAt: new Date() },
-      });
-      return tx.otpChallenge.create({
-        data: {
-          phone,
-          purpose,
-          codeHash: hashOtpCode(code),
-          maxAttempts: this.env.OTP_MAX_ATTEMPTS,
-          deliveryChannel: this.env.SMS_PROVIDER,
-          expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
-        },
-      });
-    });
+    /**
+     * One transaction, two statements: retire any code still outstanding for
+     * this number and purpose, then file the new one, so only one challenge can
+     * ever be live.
+     *
+     * The budgets are explicit because the development database is hosted and
+     * idles. At Prisma's 5-second default the interactive transaction was being
+     * torn down while the database was still coming up, and the callback then
+     * failed on its second statement with "Transaction API error: Transaction
+     * not found" (single calls measured at 9.8-12.2s). `maxWait` covers waiting
+     * for a connection, `timeout` covers the statements running once it is
+     * there; both stay under the web proxy's 30-second upstream ceiling.
+     */
+    const challenge = await this.prisma.$transaction(
+      async (tx) => {
+        await tx.otpChallenge.updateMany({
+          where: { phone, purpose, consumedAt: null, invalidatedAt: null },
+          data: { invalidatedAt: new Date() },
+        });
+        return tx.otpChallenge.create({
+          data: {
+            phone,
+            purpose,
+            codeHash: hashOtpCode(code),
+            maxAttempts: this.env.OTP_MAX_ATTEMPTS,
+            deliveryChannel: this.env.SMS_PROVIDER,
+            expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
+          },
+        });
+      },
+      { maxWait: 10_000, timeout: 20_000 },
+    );
 
     const messageKey: TranslationKey = resend ? 'sms.otp.resend_body' : 'sms.otp.body';
     const body = t(language, messageKey, {

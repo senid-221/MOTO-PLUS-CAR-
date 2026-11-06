@@ -44,6 +44,14 @@ Pooled connection strings (Neon `…-pooler`, Supabase `…-pooler`) are fine fo
 
 **The application never migrates itself at boot.** Migrations run from a controlled deployment step (see `DEPLOYMENT.md`), because several instances starting at once against one schema is how a deployment turns into an outage.
 
+### First run against Neon
+
+`0_init` has been applied to `seremoto_dev` and `seremoto_test` in a Neon project; three things about hosted Postgres cost time if you do not expect them:
+
+- **The databases have to exist before Prisma can be told about them.** `neondb_owner` may run `CREATE DATABASE` through the **direct** endpoint connected to the project's maintenance database — the pooler refuses DDL. Creating them in the console dashboard does the same thing.
+- **`P1001` on Neon usually means "no such database", not "wrong password".** Prisma reports `Can't reach database server at <host>:5432` for a database that does not exist yet, and for the same host when the database does exist the connection succeeds. Confirm the credentials by pointing the same URL at a database you know is there before changing anything else.
+- **A suspended compute answers slowly.** The first query after hours of inactivity can exceed Prisma's connect timeout while Neon wakes the endpoint; the retry a few seconds later works. Warm the endpoint with one cheap query before a long `migrate deploy` or a test run if the project has been idle.
+
 ## Keeping the migration honest
 
 `pnpm run db:check-migration` regenerates the initial migration from `schema.prisma` with `prisma migrate diff --from-empty --to-schema-datamodel --script`, normalises trailing blank lines and CRLF, and compares against the committed file. It needs no database, so it runs inside `pnpm run verify` and in CI. When it fails, the fix is a new migration — not an edit to `0_init`.
@@ -52,6 +60,7 @@ Pooled connection strings (Neon `…-pooler`, Supabase `…-pooler`) are fine fo
 
 `pnpm run db:seed` (`prisma/seed/seed.ts`) creates the accounts the auth and permission tests sign in as: one per self-service role plus the support, verification, finance and admin personas.
 
+- It loads the untracked `.env` at the repository root before connecting, and never overrides a variable the environment already set — so a local `pnpm run db:seed` needs no shell exporting, and CI keeps working from its own exported values. With no `DATABASE_URL` anywhere it stops with that instruction instead of a Prisma validation error.
 - It **refuses to run** when `NODE_ENV` is `production` or `staging`.
 - It is idempotent: rows are upserted on the unique phone, so re-running updates instead of duplicating.
 - Numbers come from `SEED_PHONE_PREFIX` (default `+2507880000`, two digits appended), so the operator decides which numbers exist.
@@ -60,5 +69,16 @@ Pooled connection strings (Neon `…-pooler`, Supabase `…-pooler`) are fine fo
 ## Testing against a real database
 
 `pnpm turbo test:e2e --filter=@seremoto/api` needs a database whose connection string contains `test`; anything else is refused so a shared instance cannot be cleaned by a test run. CI brings up `postgres:16-alpine`, deploys the migration, seeds, and runs the journey. Each run picks a random six-digit phone tag, touches only its own numbers, and deletes exactly those rows and their OTP challenges afterwards.
+
+The same suite has been run against the hosted `seremoto_test` database: `0_init` applied, then all eleven journeys passed in about 100 seconds — the per-test timings are seconds rather than milliseconds because every statement crosses the network. Nothing in the suite assumes a local server.
+
+The suite reads `DATABASE_URL`, not a separate test variable, so to run it against the hosted test database export that pair first:
+
+```bash
+DATABASE_URL="<seremoto_test pooled>" DIRECT_DATABASE_URL="<seremoto_test direct>" \
+  pnpm turbo test:e2e --filter=@seremoto/api
+```
+
+With `DATABASE_URL` still pointing at `seremoto_dev` the suite stops at its own guard and says why. That refusal is the protection, not a bug: the journey truncates tables.
 
 Turbo 2 runs tasks with a strict environment by default: a variable that the task configuration does not name is not passed to the process, so a `DATABASE_URL` exported in the CI job arrived as unset and the suite stopped at its own guard. `tasks.test:e2e.env` in `turbo.json` is therefore the list of variables the journey is allowed to read — add a variable to that list when a new environment contract entry has to be observed by an end-to-end test.

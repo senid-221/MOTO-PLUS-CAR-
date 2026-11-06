@@ -15,6 +15,8 @@
  *   numbers exist. The default is a clearly-flagged placeholder range and is
  *   printed on every run.
  */
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { AccountStatus, PrismaClient, UserRole } from '@seremoto/prisma-client';
 
 interface SeedAccount {
@@ -145,6 +147,36 @@ async function main(): Promise<void> {
   console.log(`ACTIVE users in this database now: ${activeUsers}`);
   console.log(
     'No pricing, commission, service-area or booking data was written — those belong to operations.',
+  );
+}
+
+/**
+ * `pnpm run db:seed` is executed from the repository root. Prisma takes
+ * DATABASE_URL from the environment, which a plain shell does not have unless
+ * the operator exported it — so load the untracked .env here first. Values the
+ * environment already set win, which keeps CI (it exports the variables
+ * itself) working without a .env file.
+ */
+function loadLocalEnvFile(): void {
+  const file = join(process.cwd(), '.env');
+  if (!existsSync(file)) return;
+  for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+    if (!match) continue;
+    const name = match[1];
+    const rawValue = match[2];
+    if (name === undefined || rawValue === undefined) continue;
+    if (process.env[name] !== undefined) continue;
+    process.env[name] = rawValue.trim().replace(/^["']|["']$/g, '');
+  }
+}
+
+loadLocalEnvFile();
+
+if (process.env.DATABASE_URL === undefined || process.env.DATABASE_URL.length === 0) {
+  throw new Error(
+    'DATABASE_URL is not set and .env has no value for it. Copy .env.example to .env at the ' +
+      'repository root, fill in the PostgreSQL connection string, then run pnpm run db:seed.',
   );
 }
 
