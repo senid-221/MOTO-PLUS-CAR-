@@ -174,4 +174,4 @@ State is per API process; see [SECURITY.md](SECURITY.md) for what changes when m
 
 ## Not implemented yet
 
-Booking, matching, fare quotation, wallet and ledger, MTN MoMo collection and webhook endpoints, refunds, rider onboarding and document review, marketplace orders, cooperative management, notifications, uploads, and every admin dashboard other than the user directory. Their routes are not registered, so they return `NOT_FOUND` rather than a stub success — a client cannot mistake an unbuilt feature for a working one.
+Booking, matching, fare quotation, wallet and ledger, MTN MoMo collection and webhook endpoints, refunds, rider onboarding and document review, marketplace orders, cooperative management, notifications, uploads, and every admin dashboard other than the user directory. Their routes are not registered, so they return `NOT_FOUND` rather than a stub success — a client cannot mistake an unbuilt feature for a working one. The order these get built in, and what each one still needs from outside this repository, is in [ROADMAP.md](ROADMAP.md).

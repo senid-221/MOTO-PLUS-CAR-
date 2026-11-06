@@ -8,16 +8,18 @@ This repository is the real platform, not a mockup. Every screen is fed by the A
 
 The first milestone is complete: monorepo foundation plus database and authentication.
 
-| Area                                                                                       | Status                                                |
-| ------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| pnpm workspaces + Turborepo, four shared packages, two apps                                | done                                                  |
-| PostgreSQL schema (33 tables, 19 enums) and the initial migration                          | applied on PostgreSQL 16 in CI; drift gate green      |
-| Phone OTP registration, login, sessions, refresh rotation, reuse detection                 | done — 105 unit tests, 12 e2e journeys green          |
-| Roles and permissions for the 14 personas, enforced per request                            | done                                                  |
-| Next.js web: home, register, login, verify, account; rw/en switch that never logs out      | done                                                  |
-| CI: quality job, web journey job, PostgreSQL e2e job                                       | green on every push to `main`                         |
-| Migration applied to **your** hosted database                                              | **awaiting the `DATABASE_URL` from Neon or Supabase** |
-| Bookings, riders onboarding, payments, marketplace, cooperative, admin portals, mobile app | not started                                           |
+| Area                                                                                       | Status                                                   |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| pnpm workspaces + Turborepo, four shared packages, two apps                                | done                                                     |
+| PostgreSQL schema (33 tables, 19 enums) and the initial migration                          | applied in CI and on the hosted Neon databases           |
+| Phone OTP registration, login, sessions, refresh rotation, reuse detection                 | done — 105 unit tests, 11 e2e journeys green             |
+| Roles and permissions for the 14 personas, enforced per request                            | done                                                     |
+| Next.js web: public pages — home, marketplace, news, safety academy, about, contact        | done                                                     |
+| Next.js web: register, login, verify, account; rw/en switch that never logs out            | done                                                     |
+| CI: quality job, web journey job, PostgreSQL e2e job                                       | green on every push to `main`                            |
+| Migration applied to **your** hosted database                                              | done — `seremoto_dev` and `seremoto_test` on Neon        |
+| Seeded accounts and a live sign-in round trip on that database                             | done — 8 personas, register/OTP/session/refresh verified |
+| Bookings, riders onboarding, payments, marketplace, cooperative, admin portals, mobile app | not started                                              |
 
 ## Layout
 
@@ -71,11 +73,12 @@ The e2e suite refuses any `DATABASE_URL` whose name does not contain `test`, so 
 ## Reading order
 
 1. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how a request travels and why the modules are cut this way.
-2. [docs/API.md](docs/API.md) — the endpoints that exist today, with real shapes.
-3. [docs/DATABASE.md](docs/DATABASE.md) — schema conventions, money, migration workflow.
-4. [docs/SECURITY.md](docs/SECURITY.md) — tokens, cookies, throttling, and the honest limitations.
-5. [docs/USER_FLOWS.md](docs/USER_FLOWS.md) — the journeys a customer or rider takes.
-6. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — environment variables and release procedure.
+2. [docs/ROADMAP.md](docs/ROADMAP.md) — what is proven working, what the specification still needs, and the milestone order.
+3. [docs/API.md](docs/API.md) — the endpoints that exist today, with real shapes.
+4. [docs/DATABASE.md](docs/DATABASE.md) — schema conventions, money, migration workflow.
+5. [docs/SECURITY.md](docs/SECURITY.md) — tokens, cookies, throttling, and the honest limitations.
+6. [docs/USER_FLOWS.md](docs/USER_FLOWS.md) — the journeys a customer or rider takes.
+7. [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) — environment variables and release procedure.
 
 ## Working rules for this project
 

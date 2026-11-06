@@ -67,4 +67,4 @@ Replaying a rotated refresh token does not produce a session; the reuse path is 
 
 ## Deferred by design
 
-Payments and wallet ledger, booking matching, rider onboarding documents, marketplace, cooperative tooling, admin dashboards beyond the user directory, background jobs, Redis-backed rate limiting and push notifications. `REDIS_URL` is optional in development; when it is unset the API runs any job in-process and logs a warning rather than pretending a queue exists.
+Payments and wallet ledger, booking matching, rider onboarding documents, marketplace, cooperative tooling, admin dashboards beyond the user directory, background jobs, Redis-backed rate limiting and push notifications. `REDIS_URL` is optional in development; when it is unset the API runs any job in-process and logs a warning rather than pretending a queue exists. [ROADMAP.md](ROADMAP.md) lists which of these need a schema change first and which need an external agreement before code can mean anything.
