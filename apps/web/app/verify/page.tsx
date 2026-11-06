@@ -4,6 +4,7 @@ import type { OtpPurposeName } from '@seremoto/shared-types';
 import { normalizePhone } from '@seremoto/validation';
 import { makeTranslator } from '@/messages';
 import { resolveLanguage } from '@/lib/locale';
+import { AuthSteps } from '@/components/AuthSteps';
 import { VerifyForm } from '@/components/VerifyForm';
 
 export const dynamic = 'force-dynamic';
@@ -60,6 +61,7 @@ export default async function VerifyPage({
   return (
     <div className="container narrow">
       <div className="card">
+        <AuthSteps language={language} current={2} />
         <h1>{t('auth.otp.title')}</h1>
         <VerifyForm
           phone={normalized.e164}

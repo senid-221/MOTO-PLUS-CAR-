@@ -21,6 +21,7 @@ import { roleLabel } from '@/lib/labels';
 import { rememberDevOtp } from '@/lib/dev-otp';
 import { PhoneField } from './PhoneField';
 import { StatusMessage } from './StatusMessage';
+import { RegisterIcon, SpinnerIcon } from './Icons';
 
 export function RegisterForm({ language }: { language: Language }) {
   const t = makeTranslator(language);
@@ -148,6 +149,11 @@ export function RegisterForm({ language }: { language: Language }) {
 
         <div className="form-actions">
           <button className="btn btn--primary" type="submit" disabled={pending}>
+            {pending ? (
+              <SpinnerIcon size={18} className="btn-spin" aria-hidden />
+            ) : (
+              <RegisterIcon size={18} aria-hidden />
+            )}
             {pending ? t('auth.sending_code') : t('auth.send_code')}
           </button>
         </div>

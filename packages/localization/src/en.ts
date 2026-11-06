@@ -9,11 +9,19 @@ export const en = {
   'nav.home': 'Home',
   'nav.services': 'Services',
   'nav.marketplace': 'Marketplace',
+  'nav.news': 'News',
+  'nav.safety': 'Safety Academy',
+  'nav.about': 'About',
+  'nav.contact': 'Contact',
   'nav.account': 'Account',
   'nav.login': 'Log In',
   'nav.logout': 'Log Out',
   'nav.register': 'Create account',
   'nav.language': 'Language',
+  'nav.switch_language': 'Change language',
+  'nav.label.main': 'Main navigation',
+  'nav.label.tabs': 'Bottom navigation',
+  'nav.label.footer': 'Links at the end of the page',
 
   'language.rw': 'Kinyarwanda',
   'language.en': 'English',
@@ -28,6 +36,7 @@ export const en = {
   'common.no': 'No',
   'common.retry': 'Try again',
   'common.loading': 'Loading',
+  'common.step': 'Step',
   'common.required': 'Required',
   'common.skip_to_content': 'Skip to content',
   'common.optional': 'Optional',
@@ -85,17 +94,104 @@ export const en = {
   'auth.profile.note':
     'Everything on this screen comes from the API for the account you signed in with.',
   'auth.profile.language_hint': 'Changing the language keeps you signed in.',
+  'auth.steps.label': 'Sign-in progress',
+  'auth.step.phone': 'Phone',
+  'auth.step.code': 'Code',
+  'auth.step.account': 'Account',
 
   'home.hero.title': 'Motorcycle services in one app',
   'home.hero.subtitle': 'Ride, deliver, shop and manage a cooperative from your phone.',
   'home.services.title': 'What SERE MOTO does',
   'home.cta.start': 'Get started',
   'services.ride': 'Motorcycle rides',
+  'services.ride.desc': 'Call a motorcycle and get to where you are going.',
   'services.cargo': 'Parcel delivery',
+  'services.cargo.desc': 'Send a parcel across town and know it arrived.',
   'services.shopping': 'Shopping and errands',
+  'services.shopping.desc': 'Ask for what you need and have it brought to you.',
   'services.monthly': 'Monthly transport',
+  'services.monthly.desc': 'Pay once for the trips you make every working day.',
   'services.marketplace': 'Motorcycle marketplace',
+  'services.marketplace.desc': 'Parts, tyres, oil and helmets from sellers near you.',
   'services.cooperative': 'Cooperative management',
+  'services.cooperative.desc': 'Keep members, contributions and daily records in one place.',
+  'home.how.title': 'How it works',
+  'home.how.step1.title': 'Enter your phone number',
+  'home.how.step1.desc': 'We text you a code made of six digits.',
+  'home.how.step2.title': 'Confirm the code',
+  'home.how.step2.desc': 'The code lasts five minutes. Ask for a new one when it ends.',
+  'home.how.step3.title': 'Say what you do',
+  'home.how.step3.desc': 'Rider, seller, garage or cooperative manager.',
+
+  'page.status.title': 'What runs today',
+  'page.status.body':
+    'Accounts are live: phone sign-up, one-time codes, roles and sessions. Bookings, payments and selling are still being built, so these pages describe the product without naming a price, a seller or a trip.',
+
+  'marketplace.title': 'Motorcycle marketplace',
+  'marketplace.lead': 'Parts, tyres, oil and helmets from sellers near you, brought by a rider.',
+  'marketplace.buy.title': 'Buy what you need',
+  'marketplace.buy.desc':
+    'Find the stock sellers have listed, order it, and pay with mobile money.',
+  'marketplace.sell.title': 'Sell your stock',
+  'marketplace.sell.desc':
+    'Merchants and garages list parts with a price and a quantity, and follow orders as they arrive.',
+  'marketplace.deliver.title': 'Get it brought to you',
+  'marketplace.deliver.desc':
+    'A rider collects the order and delivers it, so nobody has to close a shop to receive parts.',
+
+  'news.title': 'News',
+  'news.lead':
+    'Announcements about SERE MOTO: services that open, areas we reach, and changes that affect your account.',
+  'news.launch.title': 'Service launches',
+  'news.launch.desc': 'When a service becomes available, the announcement is posted here first.',
+  'news.area.title': 'New areas',
+  'news.area.desc': 'Where riders and sellers operate changes as more of them join.',
+  'news.change.title': 'Account and price changes',
+  'news.change.desc':
+    'Anything that changes what you pay or how your account works is posted before it takes effect.',
+  'news.empty': 'Nothing has been published yet. The first announcement will appear on this page.',
+
+  'safety.title': 'Safety Academy',
+  'safety.lead': 'Short reminders for riders and passengers on Rwandan roads.',
+  'safety.before.title': 'Before you ride',
+  'safety.before.desc':
+    'Helmet buckled, licence and insurance with you, tyres and brakes checked before you set off.',
+  'safety.road.title': 'On the road',
+  'safety.road.desc':
+    'Keep to the speed limit, leave room to stop, and ride without a phone in your hand.',
+  'safety.night.title': 'After dark',
+  'safety.night.desc':
+    'Front and rear lights working, something reflective to wear, and a passenger who holds the rider.',
+  'safety.note':
+    'General guidance only. The rules that bind riders in Rwanda are the ones issued by the Rwanda National Police and the Rwanda Transport Development Agency.',
+
+  'about.title': 'About SERE MOTO',
+  'about.lead':
+    'One account for the motorcycle services a day in Rwanda needs: rides, deliveries, shopping, spare parts, garage work and cooperative records.',
+  'about.what.title': 'What we are building',
+  'about.what.desc':
+    'A single app for the work a motorcycle supports, not only for the trips it makes.',
+  'about.who.title': 'Who it is for',
+  'about.who.desc':
+    'Passengers, riders, sellers, garages, cooperatives and businesses that book for their staff.',
+  'about.how.title': 'How it is run',
+  'about.how.desc':
+    'An account is confirmed by a code on your phone, each role sees only what it should see, and privileged actions leave a record.',
+
+  'contact.title': 'Contact',
+  'contact.lead': 'The way to reach SERE MOTO depends on what you need.',
+  'contact.account.title': 'Account help',
+  'contact.account.desc':
+    'Sign in to check your own details, or create an account if you do not have one yet.',
+  'contact.build.title': 'Bugs and building',
+  'contact.build.desc':
+    'The platform is developed in public on GitHub, where problems and ideas are tracked.',
+  'contact.build.link': 'Open the repository',
+  'contact.open.title': 'Sellers and cooperatives',
+  'contact.open.desc':
+    'Garages, merchants and cooperatives are contacted directly when the app opens for them.',
+  'contact.note':
+    'A support phone number and email address are not published yet. They appear on this page as soon as they exist.',
 
   'error.required': 'Fill in this field',
   'error.invalid_phone': 'Enter a Rwandan mobile number, 10 digits starting with 07',

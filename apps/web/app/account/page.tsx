@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { makeTranslator } from '@/messages';
 import { resolveLanguage } from '@/lib/locale';
+import { AuthSteps } from '@/components/AuthSteps';
 import { AccountPanel } from '@/components/AccountPanel';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,7 @@ export default async function AccountPage() {
   return (
     <div className="container narrow">
       <div className="card">
+        <AuthSteps language={language} current={3} />
         <h1>{t('auth.profile.title')}</h1>
         <AccountPanel language={language} />
         <p className="card__note">{t('auth.profile.note')}</p>

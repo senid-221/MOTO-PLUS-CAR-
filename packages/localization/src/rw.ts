@@ -10,11 +10,19 @@ export const rw = {
   'nav.home': 'Ahabanza',
   'nav.services': 'Serivisi',
   'nav.marketplace': 'Isoko',
+  'nav.news': 'Amakuru',
+  'nav.safety': 'Umutekano',
+  'nav.about': 'Ibyerekeye',
+  'nav.contact': 'Twandikire',
   'nav.account': 'Konti',
   'nav.login': 'Injira',
   'nav.logout': 'Sohoka',
   'nav.register': 'Fungura konti',
   'nav.language': 'Ururimi',
+  'nav.switch_language': 'Hindura ururimi',
+  'nav.label.main': 'Inzira nyamukuru',
+  'nav.label.tabs': 'Inzira zo hepfo',
+  'nav.label.footer': 'Inzira zahoza',
 
   'language.rw': 'Kinyarwanda',
   'language.en': 'Icongereza',
@@ -28,6 +36,7 @@ export const rw = {
   'common.yes': 'Yego',
   'common.no': 'Oya',
   'common.retry': 'Ongera',
+  'common.step': 'Intambwe',
   'common.loading': 'Birimo gukorwa',
   'common.required': 'Bisabwa',
   'common.skip_to_content': 'Simbuka ujye ku birimo',
@@ -85,6 +94,10 @@ export const rw = {
   'auth.profile.title': 'Konti yawe',
   'auth.profile.note': 'Byose biri kuri iyi page biva kuri API kuri konti winjiyemo.',
   'auth.profile.language_hint': 'Guhindura ururimi ntibikuvaho kuri konti.',
+  'auth.steps.label': 'Aho ugeze mu kwinjira',
+  'auth.step.phone': 'Telefone',
+  'auth.step.code': 'Kode',
+  'auth.step.account': 'Konti',
 
   'home.hero.title': 'Serivisi za moteri muri porogaramu imwe',
   'home.hero.subtitle':
@@ -92,11 +105,88 @@ export const rw = {
   'home.services.title': 'Ibyo SERE MOTO ikora',
   'home.cta.start': 'Tangira',
   'services.ride': 'Ugenda kuri moteri',
+  'services.ride.desc': 'Tega moto ugende aho ugiye mu mujyi.',
   'services.cargo': 'Kohereza ipaketi',
+  'services.cargo.desc': 'Ohereza ipaketi mu mujyi, umenye ko yageze.',
   'services.shopping': 'Kugura no gufasha imirimo',
+  'services.shopping.desc': 'Umushe kugura ibyo ukeneye bikuzanirwa.',
   'services.monthly': "Sabi y'ukwezi",
+  'services.monthly.desc': 'Risha ukwezi ku ngendo ukoresha buri munsi.',
   'services.marketplace': "Isoko ry'ibya moteri",
+  'services.marketplace.desc': "Gura ibice bya moto, amatayi n'amavuta kwa bacuruzi ba hafi.",
   'services.cooperative': 'Ucunga rya koperative',
+  'services.cooperative.desc': 'Cunga abanyamuryango, imisanzu na raporo za buri munsi.',
+  'home.how.title': 'Uko bikora',
+  'home.how.step1.title': 'Andika nimero ya telefone',
+  'home.how.step1.desc': "Tukwoherereza kode y'imibare 6 kuri SMS.",
+  'home.how.step2.title': 'Kwemeza kode',
+  'home.how.step2.desc': 'Kode imara iminota 5. Iyo irangiye usaba indi.',
+  'home.how.step3.title': 'Hitamo icyo ukora',
+  'home.how.step3.desc': 'Utwara moto, udandaza, isanzu ya moto cyangwa koperative.',
+
+  'page.status.title': 'Ibikora ubu',
+  'page.status.body':
+    "Konti zirakora: kwiyandikisha kuri telefone, kode yemeza, imirimo n'injira za konti. Gutegura ingendo, kwishyura no kucuruza biracyubakwa, bityo izi paji zisobanura serivisi zidatanga igiciro, umucuruzi cyangwa urugendo.",
+
+  'marketplace.title': "Isoko ry'ibice bya moto",
+  'marketplace.lead': 'Amatayi, ibice, amavuta n’ingobufi by’abacuruzi ba hafi, bikazwa na moto.',
+  'marketplace.buy.title': 'Gura ibyo ukeneye',
+  'marketplace.buy.desc':
+    'Shaka ibyo abacuruzi bashyize ku isoko, ubisabe, wishyure kuri Mobile Money.',
+  'marketplace.sell.title': 'Dandaza ibyo ufite',
+  'marketplace.sell.desc':
+    'Abacuruzi n’asanzu bashyiraho ibice n’ibiciro byabyo, bakurikirana ibyo basabwe.',
+  'marketplace.deliver.title': 'Bikuzanire',
+  'marketplace.deliver.desc': 'Utwara moto atwara ikyo usabye akakizana, nta guhagarika iduka.',
+
+  'news.title': 'Amakuru',
+  'news.lead': 'Amakuru ya SERE MOTO: serivisi nshya, aho tugera, n’ibihinduka kuri konti yawe.',
+  'news.launch.title': 'Serivisi zatangije',
+  'news.launch.desc': 'Serivisi iyo itangiye, aha ni ho ibanza kumenyekana.',
+  'news.area.title': 'Aho tugera',
+  'news.area.desc': 'Uko abanyamoto n’abacuruzi biyongera, n’aho hakorera hirya no hino.',
+  'news.change.title': 'Impinduka za konti n’ibiciro',
+  'news.change.desc':
+    'Ibigira ingaruka ku bwishyure cyangwa uko konti ikora bitangazwa mbere y’uko bishyirwaho.',
+  'news.empty': 'Nta makuru aratangazwa. Ubutumwa bwa mbere buzagaragara kuri iyi paji.',
+
+  'safety.title': "Amasomo y'umutekano",
+  'safety.lead': 'Inyibutsa ngufi z’abanyamoto n’abagenzi ku mihanda y’u Rwanda.',
+  'safety.before.title': 'Mbere yo gutega',
+  'safety.before.desc':
+    "Ingobufi yafashwe neza, uruhushya na assurance biri kuri wowe, amatayi n'amaburake bibanza kurebwa.",
+  'safety.road.title': 'Ku muhanda',
+  'safety.road.desc':
+    'Kurikiza umuvuduko wemewe, ucike intera ihagije yo guhagarara, nti ukore ukoresheje telefone.',
+  'safety.night.title': 'Mu ijoro',
+  'safety.night.desc':
+    "Toliki z'imbere n'inyuma zikora, wambara ikintu gisubiza urumuri, umugenzi afata uwo atwara.",
+  'safety.note':
+    'Ni inama rusange gusa. Amategeko agenga abanyamoto mu Rwanda atangwa na Police y’u Rwanda n’RTDA.',
+
+  'about.title': 'Ibyerekeye SERE MOTO',
+  'about.lead':
+    'Konti imwe ku serivisi za moto zikenewe mu Rwanda: gutega, kohereza, kugura, ibice bya moto, isanzu no gucunga koperative.',
+  'about.what.title': 'Ibyo turi kubaka',
+  'about.what.desc': 'Porogaramu imwe ku mirimo yose moto ikora, atari ingendo gusa.',
+  'about.who.title': 'Abayigenewe',
+  'about.who.desc':
+    'Abagenzi, abanyamoto, abacuruzi, asanzu, koperative n’ibigo bibicungira abakozi.',
+  'about.how.title': 'Uko icungwa',
+  'about.how.desc':
+    'Konti yemezwa na kode kuri telefone, buri mwanya ubona ibyawe gusa, ibikorwa bifite ububasha bikandikwa.',
+
+  'contact.title': 'Twandikire',
+  'contact.lead': 'Uko twavugana bitewe n’ibyo ukeneye.',
+  'contact.account.title': 'Ifashisha rya konti',
+  'contact.account.desc': 'Injira urebe amakuru yawe, cyangwa ufungure konti niba utarayifite.',
+  'contact.build.title': 'Ibibazo bya tekiniki',
+  'contact.build.desc': 'Porogaramu iterwa mu ruhame kuri GitHub, aho ibibazo bikurikiranywa.',
+  'contact.build.link': 'Reba kuri GitHub',
+  'contact.open.title': 'Abacuruzi na koperative',
+  'contact.open.desc': 'Asanzu, abacuruzi na koperative bazamenyeshwa serivisi itangiye.',
+  'contact.note':
+    "Nimero ya telefone y'abafasha na email ntibirahabwa umwanya. Bizaragara kuri iyi paji iyo bihari.",
 
   'error.required': 'Uzuza aho',
   'error.invalid_phone': 'Andika numero ya Rwanda itangira na 07, imibare 10',

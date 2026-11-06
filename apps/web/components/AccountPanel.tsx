@@ -21,6 +21,7 @@ import { api } from '@/lib/api';
 import { describeFailure } from '@/lib/errors';
 import { formatPhone, roleLabel } from '@/lib/labels';
 import { StatusMessage } from './StatusMessage';
+import { CheckIcon, LoginIcon, LogoutIcon, RetryIcon } from './Icons';
 
 export function AccountPanel({ language }: { language: Language }) {
   const t = useMemo(() => makeTranslator(language), [language]);
@@ -116,7 +117,19 @@ export function AccountPanel({ language }: { language: Language }) {
       <>
         <StatusMessage tone="error" message={error || t('auth.session.expired')} />
         <div className="form-actions">
+          {/* A cold hosted database fails the first read the same way a stale
+              session does, so asking again is offered next to logging in. */}
+          <button
+            className="btn btn--secondary"
+            type="button"
+            onClick={() => void load()}
+            disabled={busy}
+          >
+            <RetryIcon size={17} aria-hidden />
+            {t('common.retry')}
+          </button>
           <Link className="btn btn--primary" href="/login">
+            <LoginIcon size={17} aria-hidden />
             {t('nav.login')}
           </Link>
         </div>
@@ -190,11 +203,12 @@ export function AccountPanel({ language }: { language: Language }) {
               <option value="en">{t('language.en')}</option>
             </select>
             <button
-              className="btn btn--secondary"
+              className="btn btn--secondary btn--small"
               type="button"
               onClick={() => void saveLanguage()}
               disabled={busy || preferred === user.preferredLanguage}
             >
+              <CheckIcon size={16} aria-hidden />
               {t('common.save')}
             </button>
           </div>
@@ -244,11 +258,12 @@ export function AccountPanel({ language }: { language: Language }) {
           <>
             <span>{t('auth.logout.confirm')}</span>
             <button
-              className="btn btn--danger"
+              className="btn btn--danger btn--small"
               type="button"
               onClick={() => void signOut()}
               disabled={busy}
             >
+              <LogoutIcon size={16} aria-hidden />
               {t('common.confirm')}
             </button>
             <button
@@ -261,10 +276,11 @@ export function AccountPanel({ language }: { language: Language }) {
           </>
         ) : (
           <button
-            className="btn btn--secondary"
+            className="btn btn--secondary btn--small"
             type="button"
             onClick={() => setConfirmSignOut(true)}
           >
+            <LogoutIcon size={16} aria-hidden />
             {t('nav.logout')}
           </button>
         )}

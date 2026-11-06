@@ -21,6 +21,7 @@ import { forgetDevOtp, readDevOtp, rememberDevOtp } from '@/lib/dev-otp';
 import { formatPhone } from '@/lib/labels';
 import { OtpField } from './OtpField';
 import { StatusMessage } from './StatusMessage';
+import { CheckIcon, RetryIcon, SpinnerIcon } from './Icons';
 
 export function VerifyForm({
   phone,
@@ -127,14 +128,24 @@ export function VerifyForm({
             type="submit"
             disabled={pending || code.length !== 6}
           >
+            {pending ? (
+              <SpinnerIcon size={18} className="btn-spin" aria-hidden />
+            ) : (
+              <CheckIcon size={18} aria-hidden />
+            )}
             {pending ? t('auth.verifying') : t('auth.otp.verify')}
           </button>
           <button
-            className="btn btn--ghost"
+            className="btn btn--secondary btn--small"
             type="button"
             onClick={() => void resend()}
             disabled={resending || pending}
           >
+            {resending ? (
+              <SpinnerIcon size={16} className="btn-spin" aria-hidden />
+            ) : (
+              <RetryIcon size={16} aria-hidden />
+            )}
             {resending ? t('auth.sending_code') : t('auth.otp.resend')}
           </button>
         </div>

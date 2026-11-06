@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { makeTranslator } from '@/messages';
 import { resolveLanguage } from '@/lib/locale';
+import { AuthSteps } from '@/components/AuthSteps';
 import { LoginForm } from '@/components/LoginForm';
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +18,7 @@ export default async function LoginPage() {
   return (
     <div className="container narrow">
       <div className="card">
+        <AuthSteps language={language} current={1} />
         <h1>{t('auth.login.title')}</h1>
         <p>{t('auth.login.subtitle')}</p>
         <LoginForm language={language} />

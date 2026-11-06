@@ -1,46 +1,79 @@
 /*
  * SERE MOTO design tokens and component styles.
  *
- * Palette follows the product specification: deep navy for structure,
- * motorcycle yellow reserved for the one action that moves the user forward,
- * white and soft grey for surfaces. Contrast is checked against WCAG AA, so
- * text tokens are solid colours rather than faded greys, and the yellow button
- * always carries navy text rather than white.
+ * The visual language follows the reference product the owner nominated
+ * (licensing.rura.rw): a navy structural palette with a lime action accent and a
+ * cyan highlight, Poppins type, pill navigation, 20px cards lifted on hover and
+ * short cubic-bezier motion. Every value here is taken from that reference's own
+ * stylesheet rather than invented: #014E84 / #004D84 navy, #A6CE39 lime,
+ * #06B6D4 cyan, #EEF0F8 page, #E7EDF4 card border, #495057 text, #52667A muted,
+ * #F87560 invalid, 0.25rem inputs, 0.42rem large buttons, 50rem pills,
+ * 0 10px 30px / 0 20px 40px card shadows, .28s cubic-bezier(.4,0,.2,1) motion.
+ *
+ * One deliberate deviation: the reference paints white text on its lime button,
+ * which is a 1.9:1 contrast failure. Lime here always carries navy text, and the
+ * cyan highlight is decorative only — it never carries body text.
  */
 
 :root {
-  --navy-900: #0a1b2e;
-  --navy-800: #102438;
-  --navy-700: #16324b;
-  --navy-500: #1e4668;
+  /* Structure — the reference navy and its hover step. */
+  --navy-900: #014e84;
+  --navy-800: #025b9a;
+  --navy-700: #0765a7;
+  --navy-100: #d8e6f2;
 
-  --yellow: #f5c518;
-  --yellow-dark: #cfa20c;
+  /* Action accent (RURA lime) and the cyan highlight from the step cards. */
+  --lime: #a6ce39;
+  --lime-dark: #85b308;
+  --lime-soft: #f2f8e0;
+  --cyan: #06b6d4;
+  --cyan-soft: #e0f6fb;
 
+  /* Surfaces. */
   --surface: #ffffff;
-  --surface-soft: #f4f6f9;
-  --surface-inset: #eaeef4;
-  --border: #d7dee8;
-  --border-strong: #b7c2d1;
+  --surface-soft: #eef0f8;
+  --surface-inset: #f1f6f9;
+  --border: #e7edf4;
+  --border-input: #d4d4d4;
+  --border-strong: #dfe6ee;
 
-  --text: #14202e;
-  --muted: #4d5c71;
-  --on-yellow: #0a1b2e;
+  /* Text. */
+  --text: #495057;
+  --heading: #014e84;
+  --muted: #52667a;
+  --on-lime: #014e84;
   --on-navy: #ffffff;
+  /* Secondary copy on navy. Clears AA at body size, unlike a faded grey. */
+  --on-navy-muted: #d3e3f0;
 
-  --danger: #a51f16;
+  --danger: #c22610;
+  --danger-border: #f87560;
   --danger-bg: #fdecea;
-  --success: #12683a;
-  --success-bg: #e8f5ee;
-  --info: #14508f;
-  --info-bg: #eaf1fa;
+  --success: #0cb863;
+  --success-bg: #e6f9f8;
+  --info: #014e84;
+  --info-bg: #eef4fa;
 
-  --focus: #1a5fb4;
+  --focus: #014e84;
+  --focus-on-navy: #a6ce39;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-pill: 999px;
-  --shadow: 0 1px 2px rgba(10, 27, 46, 0.08), 0 8px 24px rgba(10, 27, 46, 0.06);
+  /* Geometry and elevation from the reference. */
+  --radius: 20px;
+  --radius-md: 10px;
+  --radius-sm: 0.42rem;
+  --radius-xs: 0.25rem;
+  --radius-pill: 50rem;
+  --shadow-card: 0 10px 30px rgba(1, 78, 132, 0.07);
+  --shadow-card-hover: 0 20px 40px rgba(1, 78, 132, 0.16);
+  --shadow-soft: 0 3px 30px #dddddd;
+  --shadow-nav: 0 3px 10px rgba(1, 78, 132, 0.08);
+  --shadow-badge: 0 3px 8px rgba(1, 78, 132, 0.35);
+
+  /* Motion: the reference curve, and its slower circle-box easing. */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur: 280ms;
+  --dur-slow: 500ms;
+  --lift: -8px;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -49,10 +82,18 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
+  --space-8: 4rem;
 
   --font:
-    system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+    Poppins, system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', Arial,
+    sans-serif;
+  /* The wordmark is a logotype, not UI text, so it never uses the Poppins stack. */
+  --brand-font: Oswald, 'Poppins', system-ui, sans-serif;
   --measure: 34rem;
+  /* Measured height of the sticky header at this breakpoint: the single navbar
+     row is 77 px (brand mark, its wordmark and the row padding), so an anchor
+     jump never lands under it. The phone tiers re-declare it below. */
+  --header-h: 78px;
 }
 
 *,
@@ -72,7 +113,8 @@ body {
   flex-direction: column;
   font-family: var(--font);
   font-size: 1rem;
-  line-height: 1.55;
+  font-weight: 400;
+  line-height: 1.5;
   color: var(--text);
   background: var(--surface-soft);
 }
@@ -80,29 +122,34 @@ body {
 /* Phones must not get sideways scrolling from a long word. */
 main {
   flex: 1 0 auto;
-  padding: var(--space-5) var(--space-4) var(--space-7);
+  padding: var(--space-6) 0 var(--space-8);
   overflow-wrap: break-word;
 }
 
 h1,
 h2,
 h3 {
-  color: var(--navy-900);
-  line-height: 1.2;
+  color: var(--heading);
   margin: 0 0 var(--space-3);
   letter-spacing: -0.01em;
 }
 
+/* The reference hero title: 42px at weight 900, tight leading. */
 h1 {
-  font-size: clamp(1.6rem, 1.1rem + 2.2vw, 2.35rem);
+  font-size: clamp(1.6rem, 1.05rem + 2.9vw, 2.625rem);
+  font-weight: 900;
+  line-height: 1;
 }
 
 h2 {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.15;
 }
 
 h3 {
   font-size: 1rem;
+  font-weight: 600;
 }
 
 p {
@@ -124,11 +171,14 @@ a {
   position: absolute;
   left: var(--space-3);
   top: -3rem;
-  z-index: 20;
+  z-index: 40;
   background: var(--navy-900);
   color: var(--on-navy);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .skip-link:focus {
@@ -137,7 +187,7 @@ a {
 
 .container {
   width: 100%;
-  max-width: 1080px;
+  max-width: 1140px;
   margin-inline: auto;
   padding-inline: var(--space-4);
 }
@@ -147,102 +197,168 @@ a {
   margin-inline: auto;
 }
 
-/* ---------------------------------------------------------------- header */
+/* ---------------------------------------------------------------- header
+ * One row: the brand mark with its name underneath, the pill navigation pushed to
+ * the right and the language chips at the far edge. Signing in is one of those
+ * pills and creating an account is a footer link plus the landing page's main
+ * call to action, so nothing needs a strip of its own above the logo. It stays put
+ * on scroll; the phone replaces the navbar pills with the tab bar at the bottom.
+ */
 
 .site-header {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: var(--navy-900);
-  color: var(--on-navy);
-  border-bottom: 1px solid var(--navy-800);
+  z-index: 20;
+  background: var(--surface);
+  box-shadow: var(--shadow-nav);
 }
 
 .site-header__row {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  min-height: 56px;
-  flex-wrap: wrap;
+  gap: var(--space-2);
+  /* The row never splits. Below the phone breakpoint the links leave for the
+     tab bar at the bottom of the screen instead of wrapping onto a second line. */
+  flex-wrap: nowrap;
+  min-height: 64px;
+  padding-block: var(--space-2);
 }
 
+/*
+ * The brand is the logo with its name sitting just underneath it, in the
+ * logotype face rather than the UI face, and deliberately small: the mark is what
+ * identifies the product, the words only confirm it. The image carries no text, so
+ * the name is the accessible label and the image itself is empty alt.
+ */
 .brand {
   display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  color: var(--on-navy);
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--navy-900);
   text-decoration: none;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 1.05rem;
+  flex: none;
+  min-width: 0;
 }
 
-.brand__dot {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-pill);
-  background: var(--yellow);
+.brand__mark {
+  width: auto;
+  height: 46px;
+  display: block;
   flex: none;
+  transition: transform var(--dur) var(--ease);
+}
+
+.brand__name {
+  font-family: var(--brand-font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--navy-900);
+}
+
+.brand:hover .brand__mark {
+  transform: translateY(-2px);
+}
+
+.brand:hover .brand__name {
+  color: var(--navy-800);
 }
 
 .site-nav {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   margin-left: auto;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
-.site-nav a,
-.site-nav span.nav-link {
-  color: var(--on-navy);
+/* Pills that fill navy on hover / when current, exactly like the reference nav.
+   Seven destinations share this row with the brand and the language chips, so the
+   pill is sized down from the reference's three-item bar: the glyph, one word of
+   copy and enough padding to stay a comfortable tap. */
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--navy-900);
   text-decoration: none;
-  font-size: 0.9rem;
-  padding: var(--space-2) var(--space-3);
+  font-size: 0.86rem;
+  font-weight: 500;
+  padding: 0.42rem 0.9rem;
   border-radius: var(--radius-pill);
-  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: all var(--dur) var(--ease);
 }
 
-.site-nav a:hover {
-  background: var(--navy-800);
+.nav-link svg {
+  flex: none;
 }
 
-.site-nav a[aria-current='page'] {
-  border-color: var(--yellow);
-  color: var(--yellow);
+.nav-link:hover {
+  color: var(--on-navy);
+  background: var(--navy-900);
 }
 
-/* ------------------------------------------------------------- language */
+.nav-link[aria-current='page'] {
+  color: var(--on-navy);
+  background: var(--navy-900);
+  font-weight: 600;
+}
+
+.nav-link[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  left: 0.9rem;
+  right: 0.9rem;
+  bottom: 0.26rem;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--lime);
+}
+
+/* ------------------------------------------------------------- language
+ * The reference switches language with bordered chips, the active one going
+ * lime. Same idea, kept keyboard-operable with real buttons.
+ */
 
 .language-toggle {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-1);
-  border-radius: var(--radius-pill);
-  background: var(--navy-800);
-  border: 1px solid var(--navy-700);
 }
 
 .language-toggle button {
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--on-navy);
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-pill);
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
   padding: 0.3rem 0.6rem;
   cursor: pointer;
   min-width: 0;
+  transition: all var(--dur) var(--ease);
+}
+
+.language-toggle button:hover {
+  border-color: var(--navy-900);
+  color: var(--navy-900);
 }
 
 .language-toggle button[aria-pressed='true'] {
-  background: var(--yellow);
-  color: var(--on-yellow);
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--on-lime);
+  font-weight: 800;
 }
 
 .language-toggle button:disabled {
@@ -256,8 +372,8 @@ a {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  padding: clamp(var(--space-4), 4vw, 1.875rem);
 }
 
 .card + .card {
@@ -282,23 +398,37 @@ a {
   margin: var(--space-4) 0 0;
 }
 
+/* ------------------------------------------------------------------ hero
+ * Solid navy with the large uppercase pill calls to action the reference puts
+ * over it, bordered in lime.
+ */
+
 .hero {
-  background:
-    radial-gradient(120% 120% at 100% 0%, rgba(245, 197, 24, 0.16), transparent 55%),
-    var(--navy-900);
+  background: var(--navy-900);
+  background-image: radial-gradient(
+    120% 140% at 88% -10%,
+    rgba(6, 182, 212, 0.35),
+    transparent 60%
+  );
   color: var(--on-navy);
-  border-radius: var(--radius);
-  padding: clamp(var(--space-5), 6vw, var(--space-7));
+  padding: clamp(var(--space-6), 8vw, var(--space-8)) 0;
+}
+
+.hero__inner {
+  display: grid;
+  gap: var(--space-6);
+  align-items: end;
 }
 
 .hero h1 {
   color: var(--on-navy);
-  max-width: 28ch;
+  max-width: 24ch;
 }
 
 .hero p {
-  color: #d6dfea;
+  color: var(--on-navy-muted);
   max-width: 46ch;
+  font-size: 1.05rem;
 }
 
 .hero__actions {
@@ -308,32 +438,265 @@ a {
   margin-top: var(--space-5);
 }
 
+/* -------------------------------------------------- services on navy
+ * The reference service row: a navy band, a lime heading with a 2px rule
+ * beside it, then icon circles that turn lime on hover.
+ */
+
+.section--navy {
+  background: var(--navy-900);
+  padding: clamp(var(--space-6), 7vw, var(--space-8)) 0 var(--space-8);
+}
+
+.section-rule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.section-rule h2 {
+  margin: 0;
+  color: var(--lime);
+  font-size: clamp(1.35rem, 1rem + 1.6vw, 1.9rem);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.section-rule__line {
+  flex: 1 1 auto;
+  height: 2px;
+  background: var(--lime);
+  border: 0;
+  margin: 0;
+}
+
 .service-grid {
   display: grid;
-  gap: var(--space-3);
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  margin-top: var(--space-4);
+  gap: var(--space-4);
+  /* Six services, so the tracks resolve to three across on desktop and two on a
+     tablet — never a row with a single orphaned card. */
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
 }
 
 .service {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+  padding: var(--space-3);
+  /* Six cards sit in two rows, so every one is the same height regardless of how
+     long its description wraps in Kinyarwanda or English. */
+  min-height: 11.5rem;
   border-radius: var(--radius);
-  padding: var(--space-4);
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+.service:hover {
+  transform: translateY(-6px);
+}
+
+.service__icon {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--navy-900);
+  border: 2px solid var(--lime);
+  box-shadow: 0 1rem 2rem 1rem rgba(0, 0, 0, 0.1);
+  flex: none;
+  transition: all var(--dur-slow) ease-in-out;
+}
+
+.service:hover .service__icon {
+  background: var(--lime);
+  color: var(--navy-900);
+  transform: scale(1.08) rotate(-4deg);
 }
 
 .service h3 {
-  margin-bottom: var(--space-1);
+  margin: var(--space-2) 0 0;
+  color: var(--on-navy);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .service p {
-  color: var(--muted);
-  font-size: 0.875rem;
+  color: var(--on-navy-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
   margin: 0;
+}
+
+/* ----------------------------------------------------- step cards (how it
+ * works). Reference metrics copied directly: 20px radius, 260px minimum, the
+ * gradient icon disc, the dashed connector and the hover lift.
+ */
+
+.steps-band {
+  padding: clamp(var(--space-6), 7vw, var(--space-8)) 0;
+}
+
+.steps-band h2 {
+  text-align: center;
+  color: var(--navy-900);
+}
+
+.step-grid {
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  margin-top: var(--space-6);
+}
+
+/* Dashed connector between the cards, decorative only. */
+.step-grid::before {
+  content: '';
+  position: absolute;
+  top: 52px;
+  left: calc(12.5% + 32px);
+  right: calc(12.5% + 32px);
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--cyan) 0,
+    var(--cyan) 10px,
+    transparent 10px,
+    transparent 22px
+  );
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.step-card {
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 22px 26px;
+  min-height: 260px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: all var(--dur) var(--ease);
+}
+
+.step-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cyan), var(--navy-900));
+  opacity: 0;
+  transition: opacity var(--dur) ease;
+}
+
+.step-card:hover {
+  transform: translateY(var(--lift));
+  box-shadow: var(--shadow-card-hover);
+}
+
+.step-card:hover::before {
+  opacity: 1;
+}
+
+.step-card:hover .step-icon-wrap {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+.step-icon-wrap {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 300ms ease;
+  position: relative;
+}
+
+.step-icon-wrap--c1 {
+  background: linear-gradient(135deg, #dbeafe, #93c5fd);
+  color: #1d4ed8;
+}
+
+.step-icon-wrap--c2 {
+  background: linear-gradient(135deg, #d1fae5, #6ee7b7);
+  color: #047857;
+}
+
+.step-icon-wrap--c3 {
+  background: linear-gradient(135deg, #fef3c7, #fcd34d);
+  color: #9a4a06;
+}
+
+.step-icon-wrap svg {
+  width: 34px;
+  height: 34px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
+}
+
+.step-meta {
+  text-align: center;
+  margin-bottom: 12px;
+  font-weight: 700;
+  color: var(--navy-900);
+  letter-spacing: 0.3px;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.step-number {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--cyan), var(--navy-900));
+  color: var(--on-navy);
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  vertical-align: middle;
+  box-shadow: var(--shadow-badge);
+}
+
+.step-desc {
+  text-align: center;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.65;
+}
+
+.step-desc strong {
+  display: block;
+  color: var(--navy-900);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--space-2);
 }
 
 .section {
   margin-top: var(--space-7);
+}
+
+/*
+ * Anything an in-page link or the skip link can land on has to stop below the
+ * sticky header, otherwise the destination arrives hidden behind the bar.
+ */
+section[id],
+#main {
+  scroll-margin-top: calc(var(--header-h) + var(--space-4));
 }
 
 .section__head {
@@ -370,7 +733,7 @@ a {
 .field__error {
   display: block;
   color: var(--danger);
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   margin-top: var(--space-1);
 }
@@ -384,33 +747,53 @@ textarea {
   /* 16px keeps iOS Safari from auto-zooming the whole page on focus. */
   font: inherit;
   font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
   width: 100%;
   min-width: 0;
   max-width: 100%;
   padding: 0.7rem 0.85rem;
   color: var(--text);
   background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-xs);
+  transition:
+    border-color 150ms ease-in-out,
+    box-shadow 150ms ease-in-out;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--focus);
+  border-color: var(--navy-900);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(1, 78, 132, 0.25);
 }
 
 input[aria-invalid='true'],
 select[aria-invalid='true'] {
-  border-color: var(--danger);
-  background: var(--danger-bg);
+  border-color: var(--danger-border);
+}
+
+input[aria-invalid='true']:focus,
+select[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 0.2rem rgba(248, 117, 96, 0.25);
+}
+
+input[readonly] {
+  background: var(--surface-inset);
 }
 
 input[type='tel'] {
   letter-spacing: 0.04em;
 }
 
-.otp-input {
+/*
+ * input.otp-input, not .otp-input: the field rules above use element+attribute
+ * selectors, which carry the same weight as a bare class. Qualifying the element
+ * keeps the later declaration winning, so the code really renders at 1.4rem.
+ */
+input.otp-input {
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: 0.5em;
@@ -427,22 +810,45 @@ input[type='tel'] {
 
 .choice-list {
   display: grid;
-  gap: var(--space-2);
+  gap: 0;
   margin: 0 0 var(--space-4);
   padding: 0;
   list-style: none;
 }
 
+/*
+ * The role picker is a list, not a wall of buttons: transparent rows, one hairline
+ * divider each, and the control at the left. A bordered, rounded box would read as
+ * a button even though tapping it only ticks a checkbox.
+ */
 .choice {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  padding: 0.7rem 0.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
   font-size: 0.95rem;
+  cursor: pointer;
   min-width: 0;
+  transition: color var(--dur) var(--ease);
+}
+
+/* Each label is the only child of its own li, so the divider belongs on the list. */
+.choice-list > li:not(:last-child) .choice {
+  border-bottom: 1px solid var(--border);
+}
+
+.choice:hover {
+  color: var(--navy-900);
+}
+
+/* :has() is progressive enhancement — the native checkbox already shows the state. */
+.choice:has(input:checked) {
+  color: var(--navy-900);
+  font-weight: 600;
 }
 
 .choice input[type='checkbox'],
@@ -454,16 +860,22 @@ input[type='tel'] {
   flex: none;
 }
 
-/* ------------------------------------------------------------- buttons */
+/* ------------------------------------------------------------- buttons
+ * Two shapes, both from the reference: the 0.42rem action button for forms and
+ * the pill for navigation and hero calls to action. Hover lifts and deepens the
+ * shadow; nothing moves under reduced motion.
+ */
 
 .btn {
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 0.75rem 1.15rem;
+  padding: 0.825rem 1.42rem;
+  font-size: 1.08rem;
+  line-height: 1.5;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   cursor: pointer;
@@ -471,17 +883,62 @@ input[type='tel'] {
   min-width: 0;
   /* Action labels are kept short enough to stay on one line at 390px. */
   white-space: nowrap;
+  transition: all var(--dur) var(--ease);
+}
+
+.btn svg {
+  flex: none;
+}
+
+.btn--pill {
+  border-radius: var(--radius-pill);
 }
 
 .btn--primary {
-  background: var(--yellow);
-  color: var(--on-yellow);
-  border-color: var(--yellow-dark);
+  background: var(--navy-900);
+  color: var(--on-navy);
+  border-color: var(--navy-900);
 }
 
 .btn--primary:hover {
-  background: var(--yellow-dark);
+  background: var(--navy-800);
+  border-color: var(--navy-700);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Navy with the lime outline the reference uses for its hero actions. */
+.btn--hero {
+  background: var(--navy-900);
   color: var(--on-navy);
+  border: 2px solid var(--lime);
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.btn--hero:hover {
+  background: var(--lime);
+  color: var(--on-lime);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+/* Lime carries navy text, never white. */
+.btn--accent {
+  background: var(--lime);
+  color: var(--on-lime);
+  border-color: var(--lime);
+  font-weight: 700;
+}
+
+.btn--accent:hover {
+  background: var(--lime-dark);
+  border-color: var(--lime-dark);
+  color: var(--on-navy);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .btn--secondary {
@@ -491,18 +948,34 @@ input[type='tel'] {
 }
 
 .btn--secondary:hover {
-  background: var(--surface-inset);
+  background: var(--navy-900);
+  color: var(--on-navy);
+  border-color: var(--navy-900);
+  transform: translateY(-2px);
 }
 
 .btn--ghost {
   background: transparent;
   color: var(--info);
   padding-inline: var(--space-2);
+  font-size: 0.95rem;
+}
+
+.btn--ghost:hover {
+  color: var(--navy-800);
+  text-decoration: underline;
 }
 
 .btn--danger {
   background: var(--surface);
   color: var(--danger);
+  border-color: var(--danger-border);
+  font-size: 0.95rem;
+}
+
+.btn--danger:hover {
+  background: var(--danger);
+  color: var(--on-navy);
   border-color: var(--danger);
 }
 
@@ -511,13 +984,15 @@ input[type='tel'] {
 }
 
 .btn--small {
-  padding: 0.4rem 0.7rem;
-  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
 }
 
 .btn:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+  transform: none;
+  box-shadow: none;
 }
 
 .form-actions {
@@ -526,6 +1001,17 @@ input[type='tel'] {
   gap: var(--space-3);
   align-items: center;
   margin-top: var(--space-4);
+}
+
+/* The Lucide loader turns while a call to the hosted API is in flight. */
+.btn-spin {
+  animation: btn-spin 900ms linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .form-links {
@@ -543,28 +1029,32 @@ input[type='tel'] {
   align-items: flex-start;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
   margin-bottom: var(--space-4);
   border: 1px solid transparent;
+  border-left: 4px solid var(--navy-900);
 }
 
 .status--error {
   background: var(--danger-bg);
   color: var(--danger);
-  border-color: #f0c3bf;
+  border-color: #f7cdc6;
+  border-left-color: var(--danger-border);
 }
 
 .status--success {
   background: var(--success-bg);
-  color: var(--success);
-  border-color: #b9dfc9;
+  color: #067a44;
+  border-color: #b9e6d5;
+  border-left-color: var(--success);
 }
 
 .status--info {
   background: var(--info-bg);
   color: var(--info);
-  border-color: #c3d8f0;
+  border-color: #cfe0f0;
+  border-left-color: var(--navy-900);
 }
 
 /* ------------------------------------------------------------ list rows */
@@ -606,23 +1096,23 @@ input[type='tel'] {
   gap: var(--space-1);
   font-size: 0.78rem;
   font-weight: 600;
-  padding: 0.2rem 0.55rem;
+  padding: 0.2rem 0.6rem;
   border-radius: var(--radius-pill);
   background: var(--surface-inset);
-  color: var(--navy-800);
+  color: var(--navy-900);
   border: 1px solid var(--border);
 }
 
 .pill--ok {
   background: var(--success-bg);
-  color: var(--success);
-  border-color: #b9dfc9;
+  color: #067a44;
+  border-color: #b9e6d5;
 }
 
 .pill--warn {
   background: var(--danger-bg);
   color: var(--danger);
-  border-color: #f0c3bf;
+  border-color: #f7cdc6;
 }
 
 .permission-list {
@@ -638,9 +1128,9 @@ input[type='tel'] {
   font-size: 0.78rem;
   background: var(--surface-inset);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   padding: 0.15rem 0.4rem;
-  color: var(--navy-800);
+  color: var(--navy-900);
 }
 
 details.disclosure {
@@ -661,9 +1151,9 @@ details.disclosure summary {
 .site-footer {
   flex: none;
   background: var(--navy-900);
-  color: #cdd8e5;
-  padding: var(--space-6) 0;
-  margin-top: var(--space-7);
+  color: var(--on-navy-muted);
+  padding: var(--space-5) 0 var(--space-7);
+  margin-top: var(--space-8);
   font-size: 0.85rem;
 }
 
@@ -676,7 +1166,299 @@ details.disclosure summary {
 }
 
 .site-footer a {
-  color: var(--yellow);
+  color: var(--lime);
+}
+
+.footer-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: 0.9rem;
+}
+
+.footer-nav a {
+  color: var(--lime);
+  text-decoration: none;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.footer-nav a:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------- route progress
+ * The reference shows a full-screen ripple loader; on a client-routed app the
+ * same wait reads better as a top bar in the brand gradient.
+ */
+
+.route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 40;
+  overflow: hidden;
+  pointer-events: none;
+  background: rgba(1, 78, 132, 0.12);
+}
+
+.route-progress__bar {
+  display: block;
+  height: 100%;
+  width: 38%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--cyan), var(--navy-900) 60%, var(--lime));
+  animation: route-progress-sweep 900ms ease-in-out infinite;
+}
+
+@keyframes route-progress-sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+/* ---------------------------------------------------- phone tab bar */
+
+.tab-bar {
+  display: none;
+}
+
+/*
+ * The tab bar is the same seven destinations as the pills. At a tablet width each
+ * column is over 100 px, so the glyph sits above its label; below 48rem the columns
+ * shrink to 55 px and the label leaves the visible row (see the media queries).
+ */
+.tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 60px;
+  padding: 0.5rem 0.2rem;
+  color: var(--on-navy-muted);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+
+.tab svg {
+  flex: none;
+}
+
+.tab__label {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tab:hover {
+  color: var(--on-navy);
+}
+
+.tab[aria-current='page'] {
+  color: var(--lime);
+}
+
+.tab[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24%;
+  right: 24%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--lime));
+}
+
+.tab:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.tab:focus-visible {
+  outline-color: var(--focus-on-navy);
+  outline-offset: -3px;
+}
+
+/* -------------------------------------------------------- sign-in steps
+ * The compact version of the step cards: gradient numbered disc, uppercase
+ * meta, dashed connector between steps.
+ */
+
+.steps {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0 0 var(--space-5);
+  padding: 0 0 var(--space-1);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.step__dot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  border: 0;
+  background: var(--surface-inset);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: all var(--dur) var(--ease);
+}
+
+.step__label {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.step[aria-current='step'] {
+  color: var(--navy-900);
+}
+
+.step[aria-current='step'] .step__dot {
+  background: linear-gradient(135deg, var(--cyan), var(--navy-900));
+  color: var(--on-navy);
+  box-shadow: var(--shadow-badge);
+}
+
+.step[data-done='true'] {
+  color: #067a44;
+}
+
+.step[data-done='true'] .step__dot {
+  background: var(--success-bg);
+  box-shadow: inset 0 0 0 1px #9ddcc4;
+  color: #067a44;
+}
+
+.step:not(:last-child)::after {
+  content: '';
+  width: 1.6rem;
+  height: 2px;
+  flex: none;
+  margin-left: 0.35rem;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--cyan) 0,
+    var(--cyan) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  opacity: 0.5;
+}
+
+.section__link {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--info);
+  text-decoration: none;
+  border-bottom: 2px solid var(--lime);
+  padding-bottom: 1px;
+  transition: color var(--dur) var(--ease);
+}
+
+.section__link:hover {
+  color: var(--navy-800);
+}
+
+/* ------------------------------------------------------- content pages
+ * The shape every public page in the nav shares: the navy band that names the
+ * page, three cards on the page background, then the note that says what is
+ * actually running. The disc is the service circle recoloured for a light
+ * surface, so one visual language covers the whole site.
+ */
+.info-grid {
+  display: grid;
+  gap: var(--space-4);
+  /* Three items per page, so the tracks resolve to three across on a desktop and
+     never leave a card alone on a row of its own. */
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  margin-top: var(--space-5);
+  align-items: stretch;
+}
+
+.info-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+.info-card:hover {
+  transform: translateY(-6px);
+}
+
+.info-card__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--info-bg);
+  color: var(--navy-900);
+  border: 2px solid var(--lime);
+  flex: none;
+  transition: all var(--dur-slow) ease-in-out;
+}
+
+.info-card:hover .info-card__icon {
+  background: var(--lime);
+  transform: scale(1.08);
+}
+
+.info-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.info-card p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.info-note {
+  margin-top: var(--space-5);
+}
+
+.info-note p:last-child {
+  margin-bottom: 0;
 }
 
 .visually-hidden {
@@ -691,13 +1473,118 @@ details.disclosure summary {
   border: 0;
 }
 
+/*
+ * 68rem is where seven pills, the brand and the language chips stop fitting on one
+ * row. Measured in Kinyarwanda at 769 px, the brand (70 px), the pill row (568 px)
+ * and the chips (98 px) plus their gaps want 752 px of a 722 px content box, and the
+ * last pill lands on top of the first chip. The destinations are not made smaller
+ * and they are not hidden behind a menu — they move to the tab bar at the bottom of
+ * the screen, where seven columns have room for the word as well as the icon.
+ */
+@media (max-width: 68rem) {
+  .site-nav--desktop {
+    display: none;
+  }
+
+  /* The chips are then the only thing on the right of the row, so they take the
+     free space themselves instead of sitting beside the brand. */
+  .language-toggle {
+    margin-left: auto;
+  }
+
+  .tab-bar {
+    display: grid;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    background: var(--navy-900);
+    border-top: 2px solid var(--lime);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/*
+ * 48rem is a phone. Seven columns there are 55 px wide, which holds the glyph but
+ * not the longest Kinyarwanda label, so the words leave the visible row and stay in
+ * the accessible name and the tooltip.
+ */
+@media (max-width: 48rem) {
+  /* The chips are the only language control at this width, so they grow to a
+     thumb-sized target. */
+  .language-toggle button {
+    min-height: 40px;
+    padding: 0.45rem 0.7rem;
+  }
+
+  .tab {
+    min-height: 46px;
+  }
+
+  .tab__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .site-footer {
+    padding: var(--space-4) 0 var(--space-6);
+    margin-top: var(--space-7);
+  }
+
+  .step-grid::before {
+    display: none;
+  }
+
+  .service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+}
+
 @media (max-width: 30rem) {
+  :root {
+    /* With the smaller mark the pinned header is 68 px tall. */
+    --header-h: 70px;
+  }
+
   .site-header__row {
-    min-height: 52px;
+    min-height: 56px;
+  }
+
+  /* The mark keeps its stack but shrinks so header + one line of nav still fit a
+     320px screen without the row breaking. */
+  .brand__mark {
+    height: 38px;
+  }
+
+  .brand__name {
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
   }
 
   .card {
     padding: var(--space-4);
+  }
+
+  .steps {
+    gap: var(--space-1);
+  }
+
+  .step:not(:last-child)::after {
+    width: 0.7rem;
   }
 }
 
@@ -705,5 +1592,31 @@ details.disclosure summary {
   * {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+
+  /* The sweep cannot animate here, so the bar becomes a static full-width band. */
+  .route-progress__bar {
+    animation: none !important;
+    width: 100%;
+    opacity: 0.55;
+  }
+
+  /* Hover lifts and icon turns are motion cues, so they are dropped entirely. */
+  .btn:hover,
+  .service:hover,
+  .step-card:hover,
+  .info-card:hover,
+  .info-card:hover .info-card__icon,
+  .service:hover .service__icon,
+  .step-card:hover .step-icon-wrap,
+  .brand:hover .brand__mark,
+  .nav-link:hover {
+    transform: none;
+  }
+
+  /* A spinning loader would only flicker here; the button label already says the
+     call is running. */
+  .btn-spin {
+    animation: none !important;
   }
 }

@@ -20,6 +20,7 @@ import { describeFailure, describeZodError, fieldErrors } from '@/lib/errors';
 import { rememberDevOtp } from '@/lib/dev-otp';
 import { PhoneField } from './PhoneField';
 import { StatusMessage } from './StatusMessage';
+import { LoginIcon, SpinnerIcon } from './Icons';
 
 export function LoginForm({ language }: { language: Language }) {
   const t = makeTranslator(language);
@@ -84,6 +85,11 @@ export function LoginForm({ language }: { language: Language }) {
 
         <div className="form-actions">
           <button className="btn btn--primary" type="submit" disabled={pending}>
+            {pending ? (
+              <SpinnerIcon size={18} className="btn-spin" aria-hidden />
+            ) : (
+              <LoginIcon size={18} aria-hidden />
+            )}
             {pending ? t('auth.sending_code') : t('auth.login.submit')}
           </button>
         </div>
